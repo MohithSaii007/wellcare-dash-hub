@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { 
-  Bot, Send, AlertCircle, Stethoscope, RefreshCw, 
-  MessageSquare, Activity, User as UserIcon, Clock, 
-  History, ShieldCheck, ExternalLink, Thermometer, 
-  HeartPulse, FileText, Info
+  Bot, Stethoscope, RefreshCw, 
+  Activity, ShieldCheck, ExternalLink, 
+  HeartPulse, FileText, Info, UserCheck,
+  MapPin, PhoneCall, AlertTriangle
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { diseases, type Disease } from "@/data/mockData";
+import { diseases } from "@/data/mockData";
 import { toast } from "sonner";
 
 interface ClinicalData {
@@ -32,11 +32,19 @@ interface ClinicalData {
 }
 
 interface AnalysisResult {
+  // Clinical Reasoning Fields
   explanation: string;
   differentialDiagnosis: { name: string; probability: number; reasoning: string }[];
   riskLevel: "Low" | "Medium" | "High";
   clinicalAdvice: string[];
-  consultation: string;
+  
+  // Doctor Matching Engine Fields
+  symptomUnderstanding: string;
+  recommendedDoctor: string;
+  consultationMode: "Online" | "In-person" | "Emergency";
+  urgencyLevel: "Routine" | "Priority" | "Emergency";
+  matchingReason: string;
+  
   emergency?: string;
   sources: string[];
 }
@@ -55,60 +63,59 @@ const AIAssistant = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  const getSpecialty = (category: string): string => {
+    const map: Record<string, string> = {
+      "Respiratory": "Pulmonologist",
+      "General": "General Physician",
+      "Chronic": "Internal Medicine Specialist",
+      "Neurological": "Neurologist",
+      "Dermatology": "Dermatologist",
+      "Gastrointestinal": "Gastroenterologist",
+      "Musculoskeletal": "Orthopedic Surgeon",
+      "Mental Health": "Psychiatrist",
+      "Urological": "Urologist",
+      "Eye": "Ophthalmologist",
+      "ENT": "ENT Specialist",
+      "Dental": "Dentist",
+      "Reproductive": "Gynecologist / Obstetrician",
+      "Pediatric": "Pediatrician",
+      "Allergies": "Allergist / Immunologist",
+      "Infectious": "Infectious Disease Specialist"
+    };
+    return map[category] || "General Physician";
+  };
+
   const performClinicalReasoning = (inputSymptoms: string, data: ClinicalData) => {
     setIsAnalyzing(true);
     
-    // Simulate deep clinical reasoning and database cross-referencing
     setTimeout(() => {
       const inputLower = inputSymptoms.toLowerCase();
       const words = inputLower.split(/[\s,.]+/).filter(w => w.length > 2);
       
       const matches = diseases.map(disease => {
         let score = 0;
-        
-        // 1. Symptom Matching (Base Weight: 40%)
         disease.symptoms.forEach(s => {
           if (inputLower.includes(s.toLowerCase())) score += 10;
           words.forEach(word => {
             if (s.toLowerCase().includes(word)) score += 2;
           });
         });
-
-        // 2. Category & History Alignment (Weight: 20%)
         if (data.history.toLowerCase().includes(disease.category.toLowerCase())) score += 5;
-        
-        // 3. Age/Gender Risk Factors (Weight: 20%)
-        const ageNum = parseInt(data.age);
-        if (disease.category === "Chronic" && ageNum > 45) score += 5;
-        if (disease.category === "Pediatric" && ageNum < 12) score += 10;
-        if (disease.category === "Reproductive" && data.gender === "female") score += 5;
-
-        // 4. Vital Signs Correlation (Weight: 20%)
-        const tempNum = parseFloat(data.vitals.temp);
-        if (tempNum > 38 && (disease.category === "Infectious" || disease.category === "General")) score += 8;
-        
         return { disease, score };
       }).filter(m => m.score > 0).sort((a, b) => b.score - a.score);
 
       if (matches.length === 0) {
         setResult(null);
         setIsAnalyzing(false);
-        toast.error("Insufficient data for clinical analysis. Please provide more details.");
+        toast.error("Insufficient data for clinical analysis.");
         return;
       }
 
       const topMatches = matches.slice(0, 3);
       const totalScore = topMatches.reduce((sum, m) => sum + m.score, 0);
-      
-      const differentialDiagnosis = topMatches.map(m => ({
-        name: m.disease.name,
-        probability: Math.round((m.score / totalScore) * 100),
-        reasoning: `Matches ${m.disease.symptoms.filter(s => inputLower.includes(s.toLowerCase())).length} reported symptoms and aligns with ${m.disease.category} clinical patterns.`
-      }));
-
       const primary = topMatches[0].disease;
       
-      // Risk Stratification
+      // Urgency & Risk Logic
       let riskLevel: "Low" | "Medium" | "High" = "Low";
       const isEmergencySymptom = inputLower.includes("chest pain") || inputLower.includes("breathing") || inputLower.includes("unconscious") || inputLower.includes("severe bleeding");
       
@@ -119,22 +126,29 @@ const AIAssistant = () => {
       }
 
       const analysis: AnalysisResult = {
-        explanation: `Clinical analysis of symptoms (${inputSymptoms}) in a ${data.age}yo ${data.gender} suggests a primary involvement of the ${primary.category.toLowerCase()} system. Differential diagnosis considers ${differentialDiagnosis.length} likely etiologies.`,
-        differentialDiagnosis,
+        explanation: `Clinical analysis suggests primary involvement of the ${primary.category.toLowerCase()} system.`,
+        differentialDiagnosis: topMatches.map(m => ({
+          name: m.disease.name,
+          probability: Math.round((m.score / totalScore) * 100),
+          reasoning: `Matches ${m.disease.symptoms.filter(s => inputLower.includes(s.toLowerCase())).length} reported symptoms.`
+        })),
         riskLevel,
-        clinicalAdvice: [
-          ...primary.cures.slice(0, 2),
-          "Monitor vital signs every 4 hours",
-          "Maintain strict hydration and rest protocol"
-        ],
-        consultation: `Recommended consultation with a ${primary.category === 'Dermatology' ? 'Dermatologist' : 'Specialist in Internal Medicine'} within ${riskLevel === 'High' ? '2-4 hours' : '24-48 hours'}.`,
-        emergency: riskLevel === "High" ? "CRITICAL: Presenting symptoms or vitals indicate a potential medical emergency. Proceed to the nearest Emergency Department immediately." : undefined,
-        sources: ["WHO Clinical Guidelines", "CDC Disease Database", "Mayo Clinic Professional Reference"]
+        clinicalAdvice: primary.cures.slice(0, 3),
+        
+        // Doctor Matching Engine Fields
+        symptomUnderstanding: `Symptoms indicate acute involvement of the ${primary.category.toLowerCase()} medical system.`,
+        recommendedDoctor: getSpecialty(primary.category),
+        consultationMode: riskLevel === "High" ? "Emergency" : riskLevel === "Medium" ? "In-person" : "Online",
+        urgencyLevel: riskLevel === "High" ? "Emergency" : riskLevel === "Medium" ? "Priority" : "Routine",
+        matchingReason: `Based on the ${primary.category.toLowerCase()} nature of symptoms and a ${riskLevel.toLowerCase()} risk profile.`,
+        
+        emergency: riskLevel === "High" ? "CRITICAL: Presenting symptoms indicate a potential medical emergency. Proceed to the nearest Emergency Department immediately." : undefined,
+        sources: ["WHO Clinical Guidelines", "CDC Disease Database", "Mayo Clinic"]
       };
 
       setResult(analysis);
       setIsAnalyzing(false);
-      toast.success("Clinical analysis complete.");
+      toast.success("Doctor matching complete.");
     }, 2000);
   };
 
@@ -154,9 +168,9 @@ const AIAssistant = () => {
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl hero-gradient mb-4 shadow-xl ring-4 ring-primary/10">
             <ShieldCheck className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-heading font-bold tracking-tight">Clinical Reasoning Engine</h1>
+          <h1 className="text-3xl font-heading font-bold tracking-tight">Doctor Intelligence Matching</h1>
           <p className="mt-2 text-muted-foreground max-w-2xl">
-            Advanced multi-factor diagnostic support using clinical probability modeling and real-time medical database cross-referencing.
+            Intelligent symptom analysis to match you with the right specialist and consultation mode instantly.
           </p>
         </div>
 
@@ -167,17 +181,17 @@ const AIAssistant = () => {
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Activity className="h-5 w-5 text-primary" />
-                  Clinical Data Entry
+                  Symptom Input
                 </CardTitle>
-                <CardDescription>Provide detailed information for higher accuracy</CardDescription>
+                <CardDescription>Describe how you feel for intelligent matching</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="symptoms">Primary Symptoms & Description</Label>
+                    <Label htmlFor="symptoms">Describe Symptoms</Label>
                     <Textarea 
                       id="symptoms"
-                      placeholder="Describe symptoms, onset, and severity..." 
+                      placeholder="e.g. Sharp chest pain, difficulty breathing..." 
                       value={symptoms}
                       onChange={(e) => setSymptoms(e.target.value)}
                       className="min-h-[100px] resize-none"
@@ -211,17 +225,6 @@ const AIAssistant = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Symptom Duration (Days)</Label>
-                    <Input 
-                      id="duration" 
-                      type="number" 
-                      placeholder="e.g. 3" 
-                      value={clinicalData.duration}
-                      onChange={(e) => setClinicalData({...clinicalData, duration: e.target.value})}
-                    />
-                  </div>
-
                   <Button 
                     type="button" 
                     variant="ghost" 
@@ -229,12 +232,21 @@ const AIAssistant = () => {
                     className="w-full text-xs text-primary"
                     onClick={() => setShowAdvanced(!showAdvanced)}
                   >
-                    {showAdvanced ? "Hide Advanced Vitals" : "Add Vital Signs & History"}
+                    {showAdvanced ? "Hide Advanced Details" : "Add Vitals & Duration"}
                   </Button>
 
                   {showAdvanced && (
                     <div className="space-y-4 pt-2 animate-fade-in">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-[10px] uppercase">Duration (Days)</Label>
+                          <Input 
+                            className="h-8 text-xs" 
+                            placeholder="e.g. 3"
+                            value={clinicalData.duration}
+                            onChange={(e) => setClinicalData({...clinicalData, duration: e.target.value})}
+                          />
+                        </div>
                         <div className="space-y-1">
                           <Label className="text-[10px] uppercase">Temp (°C)</Label>
                           <Input 
@@ -244,33 +256,6 @@ const AIAssistant = () => {
                             onChange={(e) => setClinicalData({...clinicalData, vitals: {...clinicalData.vitals, temp: e.target.value}})}
                           />
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-[10px] uppercase">BP (mmHg)</Label>
-                          <Input 
-                            className="h-8 text-xs" 
-                            placeholder="120/80"
-                            value={clinicalData.vitals.bp}
-                            onChange={(e) => setClinicalData({...clinicalData, vitals: {...clinicalData.vitals, bp: e.target.value}})}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[10px] uppercase">HR (bpm)</Label>
-                          <Input 
-                            className="h-8 text-xs" 
-                            placeholder="72"
-                            value={clinicalData.vitals.heartRate}
-                            onChange={(e) => setClinicalData({...clinicalData, vitals: {...clinicalData.vitals, heartRate: e.target.value}})}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] uppercase">Medical History</Label>
-                        <Input 
-                          className="h-8 text-xs" 
-                          placeholder="Diabetes, Hypertension, etc."
-                          value={clinicalData.history}
-                          onChange={(e) => setClinicalData({...clinicalData, history: e.target.value})}
-                        />
                       </div>
                     </div>
                   )}
@@ -279,12 +264,12 @@ const AIAssistant = () => {
                     {isAnalyzing ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Processing Clinical Data...
+                        Matching Doctor...
                       </>
                     ) : (
                       <>
-                        <Stethoscope className="mr-2 h-4 w-4" />
-                        Run Clinical Analysis
+                        <Bot className="mr-2 h-4 w-4" />
+                        Match Doctor Specialty
                       </>
                     )}
                   </Button>
@@ -295,22 +280,11 @@ const AIAssistant = () => {
             <div className="rounded-xl bg-muted/50 p-4 border border-dashed">
               <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase mb-2">
                 <Info className="h-3 w-3" />
-                System Status
+                Matching Logic
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px]">
-                  <span>Database Connectivity</span>
-                  <span className="text-success font-bold">ACTIVE</span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span>Reasoning Engine</span>
-                  <span className="text-success font-bold">OPTIMIZED</span>
-                </div>
-                <div className="flex justify-between text-[10px]">
-                  <span>Firebase Health Sync</span>
-                  <span className="text-primary font-bold">CONNECTED</span>
-                </div>
-              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Our engine cross-references symptoms with 16+ medical specialties and urgency protocols to ensure you see the right expert.
+              </p>
             </div>
           </div>
 
@@ -323,85 +297,68 @@ const AIAssistant = () => {
                   <div className="absolute inset-0 h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-primary">Clinical Reasoning in Progress</p>
-                  <p className="text-sm text-muted-foreground">Cross-referencing WHO & CDC databases...</p>
+                  <p className="text-lg font-bold text-primary">Analyzing Medical Context</p>
+                  <p className="text-sm text-muted-foreground">Identifying primary medical system...</p>
                 </div>
               </div>
             ) : result ? (
               <div className="space-y-6 animate-fade-in">
+                {/* Doctor Matching Report */}
                 <Card className="overflow-hidden border-l-4 border-l-primary shadow-xl">
                   <CardHeader className="bg-muted/30 pb-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-primary" />
-                        Clinical Analysis Report
+                        <UserCheck className="h-5 w-5 text-primary" />
+                        Doctor Matching Report
                       </CardTitle>
                       <Badge 
-                        variant={result.riskLevel === 'High' ? 'destructive' : result.riskLevel === 'Medium' ? 'outline' : 'secondary'}
-                        className={`px-3 py-1 ${result.riskLevel === 'Medium' ? 'border-warning text-warning' : ''}`}
+                        variant={result.urgencyLevel === 'Emergency' ? 'destructive' : result.urgencyLevel === 'Priority' ? 'outline' : 'secondary'}
+                        className={`px-3 py-1 ${result.urgencyLevel === 'Priority' ? 'border-warning text-warning' : ''}`}
                       >
-                        Risk: {result.riskLevel}
+                        {result.urgencyLevel} Urgency
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-8">
+                  <CardContent className="p-6 space-y-6">
                     <section>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                        🔍 Clinical Summary
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+                        🔍 Symptom Understanding
                       </h3>
-                      <p className="text-foreground leading-relaxed text-sm bg-accent/20 p-4 rounded-lg border border-accent/30">
-                        {result.explanation}
-                      </p>
-                    </section>
-
-                    <section>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-                        🩺 Differential Diagnosis
-                      </h3>
-                      <div className="space-y-4">
-                        {result.differentialDiagnosis.map((d, i) => (
-                          <div key={i} className="space-y-2">
-                            <div className="flex justify-between items-end">
-                              <div>
-                                <span className="text-sm font-bold block">{d.name}</span>
-                                <span className="text-[10px] text-muted-foreground">{d.reasoning}</span>
-                              </div>
-                              <span className="text-xs font-mono font-bold text-primary">{d.probability}%</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-primary transition-all duration-1000" 
-                                style={{ width: `${d.probability}%` }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-sm font-medium text-foreground">{result.symptomUnderstanding}</p>
                     </section>
 
                     <div className="grid gap-6 sm:grid-cols-2">
-                      <section>
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                          ✅ Clinical Advice
+                      <section className="rounded-lg bg-accent/20 p-4 border border-accent/30">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
+                          🧑‍⚕️ Recommended Doctor Type
                         </h3>
-                        <ul className="space-y-2">
-                          {result.clinicalAdvice.map((advice, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                              <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
-                              {advice}
-                            </li>
-                          ))}
-                        </ul>
+                        <p className="text-lg font-bold text-primary">{result.recommendedDoctor}</p>
                       </section>
-                      <section>
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                          🏥 Consultation Plan
+
+                      <section className="rounded-lg bg-muted/50 p-4 border">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+                          🏥 Consultation Mode
                         </h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {result.consultation}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          {result.consultationMode === 'Online' ? <Bot className="h-4 w-4 text-primary" /> : result.consultationMode === 'Emergency' ? <AlertTriangle className="h-4 w-4 text-destructive" /> : <MapPin className="h-4 w-4 text-primary" />}
+                          <p className="text-lg font-bold">{result.consultationMode}</p>
+                        </div>
                       </section>
                     </div>
+
+                    <section>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+                        ⏱ Urgency Level
+                      </h3>
+                      <p className="text-sm font-semibold">{result.urgencyLevel}</p>
+                    </section>
+
+                    <section>
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+                        📌 Reason for Matching
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{result.matchingReason}</p>
+                    </section>
 
                     {result.emergency && (
                       <div className="rounded-xl bg-destructive/10 p-4 border border-destructive/20 animate-pulse">
@@ -412,7 +369,7 @@ const AIAssistant = () => {
                       </div>
                     )}
 
-                    <div className="pt-4 border-t flex flex-wrap gap-4 items-center justify-between">
+                    <div className="pt-4 border-t flex justify-between items-center">
                       <div className="flex gap-2">
                         {result.sources.map((s, i) => (
                           <Badge key={i} variant="secondary" className="text-[9px] font-normal">
@@ -420,28 +377,45 @@ const AIAssistant = () => {
                           </Badge>
                         ))}
                       </div>
-                      <span className="text-[10px] text-muted-foreground italic">
-                        Report ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}
-                      </span>
+                      <Button size="sm" className="gap-2" onClick={() => toast.info("Redirecting to appointment booking...")}>
+                        <PhoneCall className="h-4 w-4" />
+                        Book {result.recommendedDoctor}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
 
-                <div className="flex items-start gap-3 rounded-xl bg-warning/5 p-4 text-[10px] text-muted-foreground border border-warning/20">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
-                  <p>
-                    <strong>Clinical Disclaimer:</strong> This system provides decision support based on statistical modeling and clinical guidelines. It is NOT a substitute for professional medical judgment. All findings must be validated by a licensed healthcare provider.
-                  </p>
-                </div>
+                {/* Clinical Context (Secondary) */}
+                <Card className="border-dashed">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      Clinical Context & Differential Diagnosis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pb-4 space-y-4">
+                    <div className="space-y-3">
+                      {result.differentialDiagnosis.map((d, i) => (
+                        <div key={i} className="flex justify-between items-center text-xs">
+                          <span className="font-medium">{d.name}</span>
+                          <span className="font-mono text-primary">{d.probability}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="rounded-lg bg-warning/5 p-3 border border-warning/20 text-[10px] text-muted-foreground">
+                      <strong>Note:</strong> This matching is based on statistical probability. Always confirm with a medical professional.
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center text-center p-12 rounded-2xl border-2 border-dashed bg-muted/20">
                 <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                  <Stethoscope className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-bold text-muted-foreground">Awaiting Clinical Data</h3>
+                <h3 className="text-lg font-bold text-muted-foreground">Awaiting Symptom Input</h3>
                 <p className="text-sm text-muted-foreground max-w-xs mt-2">
-                  Enter your symptoms and clinical details on the left to generate a comprehensive medical analysis report.
+                  Describe your symptoms to find the right doctor and consultation mode.
                 </p>
               </div>
             )}

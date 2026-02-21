@@ -8,6 +8,7 @@ interface ServiceCardProps {
   to: string;
   color: "primary" | "secondary" | "accent" | "success" | "warning";
   delay?: number;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 const colorMap = {
@@ -18,10 +19,11 @@ const colorMap = {
   warning: "bg-warning text-warning-foreground",
 };
 
-const ServiceCard = ({ title, description, icon: Icon, to, color, delay = 0 }: ServiceCardProps) => {
+const ServiceCard = ({ title, description, icon: Icon, to, color, delay = 0, onClick }: ServiceCardProps) => {
   return (
     <Link
       to={to}
+      onClick={onClick}
       className="group block rounded-xl border bg-card p-6 card-shadow transition-all duration-300 hover:card-shadow-hover hover:-translate-y-1 animate-fade-in"
       style={{ animationDelay: `${delay}ms` }}
     >

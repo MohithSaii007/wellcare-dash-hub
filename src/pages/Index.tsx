@@ -1,11 +1,26 @@
 import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import ServiceCard from "@/components/ServiceCard";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-medical.jpg";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 const Index = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleProtectedClick = (e: React.MouseEvent, path: string) => {
+    if (!user) {
+      e.preventDefault();
+      toast.info("Please login to access MedCare services", {
+        description: "You need an account to book appointments or order medicines."
+      });
+      navigate("/auth");
+    }
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -23,10 +38,21 @@ const Index = () => {
               Search diseases, book appointments, order medicines, and get doctor home visits — all from one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Button size="lg" className="hero-gradient border-none" asChild>
+              <Button 
+                size="lg" 
+                className="hero-gradient border-none" 
+                onClick={(e) => handleProtectedClick(e, "/ai-assistant")}
+                asChild
+              >
                 <Link to="/ai-assistant">Try AI Assistant <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20" asChild>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                onClick={(e) => handleProtectedClick(e, "/search")}
+                asChild
+              >
                 <Link to="/search">Search Diseases</Link>
               </Button>
             </div>
@@ -44,6 +70,7 @@ const Index = () => {
             to="/ai-assistant"
             color="accent"
             delay={0}
+            onClick={(e) => handleProtectedClick(e, "/ai-assistant")}
           />
           <ServiceCard
             title="Disease Search"
@@ -52,6 +79,7 @@ const Index = () => {
             to="/search"
             color="primary"
             delay={100}
+            onClick={(e) => handleProtectedClick(e, "/search")}
           />
           <ServiceCard
             title="Book Appointment"
@@ -60,6 +88,7 @@ const Index = () => {
             to="/appointments"
             color="secondary"
             delay={200}
+            onClick={(e) => handleProtectedClick(e, "/appointments")}
           />
           <ServiceCard
             title="Order Medicines"
@@ -68,6 +97,7 @@ const Index = () => {
             to="/medicines"
             color="success"
             delay={300}
+            onClick={(e) => handleProtectedClick(e, "/medicines")}
           />
           <ServiceCard
             title="Doctor Home Visit"
@@ -76,6 +106,7 @@ const Index = () => {
             to="/doctor-visit"
             color="warning"
             delay={400}
+            onClick={(e) => handleProtectedClick(e, "/doctor-visit")}
           />
         </div>
       </section>
@@ -92,22 +123,30 @@ const Index = () => {
               step: "01",
               title: "Identify Symptoms",
               desc: "Use our AI Assistant or Disease Search to understand your health concerns.",
-              icon: Search
+              icon: Search,
+              path: "/search"
             },
             {
               step: "02",
               title: "Consult Experts",
               desc: "Book an in-hospital appointment or request a doctor to visit your home.",
-              icon: Stethoscope
+              icon: Stethoscope,
+              path: "/appointments"
             },
             {
               step: "03",
               title: "Get Treatment",
               desc: "Order prescribed medicines for home delivery and manage your recovery.",
-              icon: Pill
+              icon: Pill,
+              path: "/medicines"
             }
           ].map((item, i) => (
-            <div key={i} className="relative p-6 rounded-2xl border bg-card card-shadow animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+            <div 
+              key={i} 
+              className="relative p-6 rounded-2xl border bg-card card-shadow animate-fade-in cursor-pointer hover:border-primary transition-colors" 
+              style={{ animationDelay: `${i * 100}ms` }}
+              onClick={(e) => handleProtectedClick(e, item.path)}
+            >
               <div className="absolute -top-4 -left-4 h-12 w-12 rounded-xl hero-gradient flex items-center justify-center text-white font-bold text-xl shadow-lg">
                 {item.step}
               </div>
@@ -206,7 +245,12 @@ const Index = () => {
               <Button size="lg" className="hero-gradient border-none" asChild>
                 <Link to="/auth">Get Started Now</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={(e) => handleProtectedClick(e, "/appointments")}
+                asChild
+              >
                 <Link to="/appointments">Book an Appointment</Link>
               </Button>
             </div>

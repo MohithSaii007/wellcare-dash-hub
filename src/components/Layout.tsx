@@ -1,7 +1,16 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: Home },
@@ -20,6 +29,13 @@ interface LayoutProps {
 const Layout = ({ children, cartCount = 0, onCartClick }: LayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,10 +80,30 @@ const Layout = ({ children, cartCount = 0, onCartClick }: LayoutProps) => {
                 </span>
               </Button>
             )}
-            <Button variant="outline" size="sm" className="hidden md:flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Guest User
-            </Button>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="max-w-[100px] truncate">{user.displayName || user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="default" size="sm" onClick={() => navigate("/auth")}>
+                Login
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="icon"

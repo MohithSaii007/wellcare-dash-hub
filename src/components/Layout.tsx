@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import NotificationCenter from "./NotificationCenter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +74,8 @@ const Layout = ({ children, cartCount = 0, onCartClick }: LayoutProps) => {
           </nav>
 
           <div className="flex items-center gap-2">
+            <NotificationCenter />
+            
             {cartCount > 0 && (
               <Button variant="outline" size="sm" className="relative" onClick={onCartClick}>
                 <ShoppingCart className="h-4 w-4" />

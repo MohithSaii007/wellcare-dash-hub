@@ -1,4 +1,4 @@
-import { Search, Calendar, Pill, Stethoscope, Activity, Shield } from "lucide-react";
+import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot } from "lucide-react";
 import Layout from "@/components/Layout";
 import ServiceCard from "@/components/ServiceCard";
 import heroImage from "@/assets/hero-medical.jpg";
@@ -26,38 +26,46 @@ const Index = () => {
 
       {/* Services Grid */}
       <section className="container -mt-8 relative z-10 pb-16">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <ServiceCard
-            title="Disease Search"
-            description="Look up diseases, symptoms, causes and recommended treatments"
-            icon={Search}
-            to="/search"
-            color="primary"
+            title="AI Assistant"
+            description="Instant symptom analysis and health insights using AI"
+            icon={Bot}
+            to="/ai-assistant"
+            color="accent"
             delay={0}
           />
           <ServiceCard
-            title="Book Appointment"
-            description="Find hospitals & doctors, choose a time slot, and book instantly"
-            icon={Calendar}
-            to="/appointments"
-            color="secondary"
+            title="Disease Search"
+            description="Look up diseases, symptoms, causes and treatments"
+            icon={Search}
+            to="/search"
+            color="primary"
             delay={100}
           />
           <ServiceCard
-            title="Order Medicines"
-            description="Browse medicines by category and get them delivered to your door"
-            icon={Pill}
-            to="/medicines"
-            color="success"
+            title="Book Appointment"
+            description="Find hospitals & doctors and book instantly"
+            icon={Calendar}
+            to="/appointments"
+            color="secondary"
             delay={200}
           />
           <ServiceCard
+            title="Order Medicines"
+            description="Browse medicines and get them delivered home"
+            icon={Pill}
+            to="/medicines"
+            color="success"
+            delay={300}
+          />
+          <ServiceCard
             title="Doctor Home Visit"
-            description="Book a qualified doctor to visit you at home for consultation"
+            description="Book a qualified doctor to visit you at home"
             icon={Stethoscope}
             to="/doctor-visit"
             color="warning"
-            delay={300}
+            delay={400}
           />
         </div>
       </section>

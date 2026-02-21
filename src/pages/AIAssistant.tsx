@@ -5,7 +5,7 @@ import {
   Bot, Stethoscope, RefreshCw, 
   Activity, ShieldCheck, ExternalLink, 
   HeartPulse, FileText, Info, UserCheck,
-  MapPin, PhoneCall, AlertTriangle
+  MapPin, PhoneCall, AlertTriangle, AlertCircle
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { diseases } from "@/data/mockData";
 import { toast } from "sonner";
 
@@ -327,6 +328,25 @@ const AIAssistant = () => {
                       <p className="text-sm font-medium text-foreground">{result.symptomUnderstanding}</p>
                     </section>
 
+                    {/* Predicted Diseases Section */}
+                    <section className="space-y-4">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+                        🩺 Predicted Conditions (Differential Diagnosis)
+                      </h3>
+                      <div className="space-y-4">
+                        {result.differentialDiagnosis.map((d, i) => (
+                          <div key={i} className="space-y-1.5">
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="font-semibold">{d.name}</span>
+                              <span className="font-mono text-primary font-bold">{d.probability}%</span>
+                            </div>
+                            <Progress value={d.probability} className="h-1.5" />
+                            <p className="text-[10px] text-muted-foreground italic">{d.reasoning}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
                     <div className="grid gap-6 sm:grid-cols-2">
                       <section className="rounded-lg bg-accent/20 p-4 border border-accent/30">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
@@ -385,28 +405,12 @@ const AIAssistant = () => {
                   </CardContent>
                 </Card>
 
-                {/* Clinical Context (Secondary) */}
-                <Card className="border-dashed">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-                      <FileText className="h-4 w-4" />
-                      Clinical Context & Differential Diagnosis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pb-4 space-y-4">
-                    <div className="space-y-3">
-                      {result.differentialDiagnosis.map((d, i) => (
-                        <div key={i} className="flex justify-between items-center text-xs">
-                          <span className="font-medium">{d.name}</span>
-                          <span className="font-mono text-primary">{d.probability}%</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="rounded-lg bg-warning/5 p-3 border border-warning/20 text-[10px] text-muted-foreground">
-                      <strong>Note:</strong> This matching is based on statistical probability. Always confirm with a medical professional.
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="flex items-start gap-3 rounded-xl bg-warning/5 p-4 text-[10px] text-muted-foreground border border-warning/20">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
+                  <p>
+                    <strong>Clinical Disclaimer:</strong> This system provides decision support based on statistical modeling and clinical guidelines. It is NOT a substitute for professional medical judgment. All findings must be validated by a licensed healthcare provider.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center text-center p-12 rounded-2xl border-2 border-dashed bg-muted/20">

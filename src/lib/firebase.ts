@@ -3,13 +3,13 @@ import { getAuth } from "firebase/auth";
 
 // TODO: Replace with your actual Firebase project configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBR54YYzlKaVehGTdoOyHlj1gzwa76kSoM",
-  authDomain: "medicare-ecdd1.firebaseapp.com",
-  projectId: "medicare-ecdd1",
-  storageBucket: "medicare-ecdd1.firebasestorage.app",
-  messagingSenderId: "531114785246",
-  appId: "1:531114785246:web:b90bce970ce0cfa3f0054f",
-  measurementId: "G-5XDN06KZL4"
+  apiKey: "AIzaSyAJxRPpSWR0UMID6399YDNiM3qDYYirIDs",
+  authDomain: "wellcare-d96d4.firebaseapp.com",
+  projectId: "wellcare-d96d4",
+  storageBucket: "wellcare-d96d4.firebasestorage.app",
+  messagingSenderId: "27099442561",
+  appId: "1:27099442561:web:f1d98b7a6883dd1000cc80",
+  measurementId: "G-PB1PYGKJVS"
 };
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

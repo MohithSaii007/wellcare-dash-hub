@@ -6,7 +6,7 @@ import {
   TrendingUp, AlertCircle, Calendar, ChevronRight,
   Info, Bell, Download, Share2, Trash2, Loader2,
   ArrowUpRight, ArrowDownRight, Minus, Watch, RefreshCw,
-  Bluetooth, Smartphone, Battery, Signal, X
+  Bluetooth, Smartphone, Battery, Signal, X, Search, CheckCircle2
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ const HealthDashboard = () => {
   
   // Bluetooth State
   const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
+  const [discoveredDevice, setDiscoveredDevice] = useState<BluetoothDevice | null>(null);
   const [hrCharacteristic, setHrCharacteristic] = useState<BluetoothRemoteGATTCharacteristic | null>(null);
   const [liveHeartRate, setLiveHeartRate] = useState<number | null>(null);
   
@@ -82,8 +83,6 @@ const HealthDashboard = () => {
   // Bluetooth Data Parser
   const handleCharacteristicValueChanged = (event: any) => {
     const value = event.target.value;
-    // Heart Rate Measurement format: 
-    // Flags (1 byte), Heart Rate Value (1 or 2 bytes)
     const flags = value.getUint8(0);
     const rate16Bits = flags & 0x1;
     let heartRate;
@@ -95,22 +94,39 @@ const HealthDashboard = () => {
     setLiveHeartRate(heartRate);
   };
 
-  const handlePairDevice = async () => {
+  const startDiscovery = async () => {
     if (!navigator.bluetooth) {
-      toast.error("Web Bluetooth is not supported in this browser. Please use Chrome or Edge.");
+      toast.error("Web Bluetooth is not supported in this browser.");
       return;
     }
 
     setIsPairing(true);
+    setDiscoveredDevice(null);
+    
     try {
-      // Requesting real Bluetooth devices with Heart Rate service
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: ['heart_rate'] }],
         optionalServices: ['battery_service', 'device_information']
       });
-
-      toast.info(`Connecting to ${device.name}...`);
       
+      setDiscoveredDevice(device);
+      toast.success("Device discovered!", {
+        description: `Found ${device.name}. Click connect to start streaming.`
+      });
+    } catch (error: any) {
+      console.error("Bluetooth Discovery Error:", error);
+      if (error.name !== 'NotFoundError') {
+        toast.error("Discovery failed. Ensure Bluetooth is enabled.");
+      }
+    } finally {
+      setIsPairing(false);
+    }
+  };
+
+  const connectToDevice = async (device: BluetoothDevice) => {
+    setIsPairing(true);
+    try {
+      toast.info(`Connecting to ${device.name}...`);
       const server = await device.gatt?.connect();
       const service = await server?.getPrimaryService('heart_rate');
       const characteristic = await service?.getCharacteristic('heart_rate_measurement');
@@ -120,6 +136,7 @@ const HealthDashboard = () => {
         characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
         setHrCharacteristic(characteristic);
         setConnectedDevice(device);
+        setDiscoveredDevice(null);
         
         device.addEventListener('gattserverdisconnected', () => {
           setConnectedDevice(null);
@@ -127,15 +144,11 @@ const HealthDashboard = () => {
           toast.error("Device disconnected");
         });
 
-        toast.success(`Connected to ${device.name}!`, {
-          description: "Real-time heart rate data is now streaming."
-        });
+        toast.success(`Connected to ${device.name}!`);
       }
-    } catch (error: any) {
-      console.error("Bluetooth Error:", error);
-      if (error.name !== 'NotFoundError') {
-        toast.error("Failed to connect to Bluetooth device. Ensure it is in pairing mode.");
-      }
+    } catch (error) {
+      console.error("Connection Error:", error);
+      toast.error("Failed to connect to device.");
     } finally {
       setIsPairing(false);
     }
@@ -148,15 +161,12 @@ const HealthDashboard = () => {
     setConnectedDevice(null);
     setLiveHeartRate(null);
     setHrCharacteristic(null);
+    setDiscoveredDevice(null);
   };
 
   const handleSyncWatch = async () => {
-    if (!user || !liveHeartRate) {
-      toast.error("No live data to sync.");
-      return;
-    }
+    if (!user || !liveHeartRate) return;
     setIsSyncing(true);
-    
     try {
       await addDoc(collection(db, "health_readings"), {
         userId: user.uid,
@@ -167,10 +177,9 @@ const HealthDashboard = () => {
         status: liveHeartRate > 100 ? "high" : liveHeartRate < 60 ? "low" : "normal",
         source: "watch"
       });
-      
-      toast.success("Heart rate reading synced to your medical history.");
+      toast.success("Reading synced successfully.");
     } catch (error) {
-      toast.error("Failed to sync data.");
+      toast.error("Failed to sync.");
     } finally {
       setIsSyncing(false);
     }
@@ -244,7 +253,7 @@ const HealthDashboard = () => {
           
           <div className="flex items-center gap-2">
             {!connectedDevice ? (
-              <Button variant="outline" className="gap-2 border-primary/30 text-primary" onClick={handlePairDevice} disabled={isPairing}>
+              <Button variant="outline" className="gap-2 border-primary/30 text-primary" onClick={startDiscovery} disabled={isPairing}>
                 {isPairing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bluetooth className="h-4 w-4" />}
                 Pair Smart Watch
               </Button>
@@ -300,6 +309,8 @@ const HealthDashboard = () => {
                 <Badge className="bg-success text-white gap-1 animate-pulse">
                   <div className="h-1.5 w-1.5 rounded-full bg-white" /> LIVE
                 </Badge>
+              ) : isPairing ? (
+                <Badge variant="outline" className="text-primary animate-pulse">SCANNING</Badge>
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">OFFLINE</Badge>
               )}
@@ -312,37 +323,71 @@ const HealthDashboard = () => {
               <CardDescription>{connectedDevice?.name || "No device connected"}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-muted-foreground uppercase">Heart Rate</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold tracking-tighter">{liveHeartRate || "--"}</span>
-                    <span className="text-sm text-muted-foreground">bpm</span>
+              {connectedDevice ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-muted-foreground uppercase">Heart Rate</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-4xl font-bold tracking-tighter">{liveHeartRate || "--"}</span>
+                        <span className="text-sm text-muted-foreground">bpm</span>
+                      </div>
+                    </div>
+                    <Heart className={`h-10 w-10 text-destructive ${liveHeartRate ? 'animate-pulse' : 'opacity-20'}`} />
                   </div>
-                </div>
-                <Heart className={`h-10 w-10 text-destructive ${liveHeartRate ? 'animate-pulse' : 'opacity-20'}`} />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-muted-foreground uppercase">Connection Status</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-bold tracking-tighter">
-                      {connectedDevice ? "Stable Connection" : "Disconnected"}
-                    </span>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-muted-foreground uppercase">Connection Status</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-bold tracking-tighter">Stable Connection</span>
+                      </div>
+                    </div>
+                    <Signal className="h-10 w-10 text-primary" />
                   </div>
-                </div>
-                <Signal className={`h-10 w-10 text-primary ${connectedDevice ? 'opacity-100' : 'opacity-20'}`} />
-              </div>
-
-              {!connectedDevice && (
-                <div className="space-y-4">
-                  <Button className="w-full hero-gradient" onClick={handlePairDevice} disabled={isPairing}>
-                    {isPairing ? "Scanning..." : "Connect Real Watch"}
+                </>
+              ) : discoveredDevice ? (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="p-4 rounded-xl bg-white border border-primary/20 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                          <Bluetooth className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{discoveredDevice.name}</p>
+                          <p className="text-[10px] text-muted-foreground">Ready to connect</p>
+                        </div>
+                      </div>
+                      <Button size="sm" className="hero-gradient" onClick={() => connectToDevice(discoveredDevice)}>
+                        Connect
+                      </Button>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setDiscoveredDevice(null)}>
+                    Cancel
                   </Button>
-                  <p className="text-[10px] text-center text-muted-foreground">
-                    Ensure your watch is in pairing mode and supports standard Heart Rate services.
+                </div>
+              ) : isPairing ? (
+                <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                  <div className="relative">
+                    <Search className="h-12 w-12 text-primary animate-pulse" />
+                    <div className="absolute inset-0 h-12 w-12 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                  </div>
+                  <p className="text-sm font-medium text-primary">Scanning for devices...</p>
+                  <p className="text-[10px] text-muted-foreground text-center px-4">
+                    Please select your device from the browser popup to continue.
                   </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <Bluetooth className="h-12 w-12 text-muted-foreground/20 mb-2" />
+                    <p className="text-sm text-muted-foreground">No active connection</p>
+                  </div>
+                  <Button className="w-full hero-gradient" onClick={startDiscovery}>
+                    Start Discovery
+                  </Button>
                 </div>
               )}
             </CardContent>

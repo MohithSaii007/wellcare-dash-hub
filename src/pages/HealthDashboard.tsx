@@ -104,32 +104,31 @@ const HealthDashboard = () => {
     setDiscoveredDevice(null);
     
     try {
-      // The browser's native device picker should appear here
+      // Broadening the search to accept all devices
+      // This ensures the user sees a list of everything nearby
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: ['heart_rate'] }],
-        optionalServices: ['battery_service', 'device_information']
+        acceptAllDevices: true,
+        optionalServices: [
+          'heart_rate', 
+          'battery_service', 
+          'device_information', 
+          'blood_pressure', 
+          'glucose'
+        ]
       });
       
       setDiscoveredDevice(device);
-      toast.success("Device found!", {
-        description: `Selected ${device.name}. Click connect to start streaming.`
+      toast.success("Device selected!", {
+        description: `Found ${device.name || 'Unknown Device'}. Click connect to attempt data sync.`
       });
     } catch (error: any) {
       console.error("Bluetooth Discovery Error:", error);
       
       if (error.name === 'NotFoundError') {
-        toast.info("Discovery cancelled by user.");
-      } else if (error.name === 'SecurityError') {
-        toast.error("Permission Denied", {
-          description: "The browser blocked Bluetooth access. Try opening the app in a new tab."
-        });
-      } else if (error.name === 'NotAllowedError') {
-        toast.error("Bluetooth Permission Required", {
-          description: "Please allow Bluetooth access in your browser settings."
-        });
+        toast.info("Discovery cancelled.");
       } else {
         toast.error("Discovery failed", {
-          description: "Ensure Bluetooth is ON and your device is in pairing mode."
+          description: "Ensure Bluetooth is ON and your device is nearby."
         });
       }
     } finally {
@@ -140,26 +139,38 @@ const HealthDashboard = () => {
   const connectToDevice = async (device: BluetoothDevice) => {
     setIsPairing(true);
     try {
-      toast.info(`Connecting to ${device.name}...`);
+      toast.info(`Connecting to ${device.name || 'Device'}...`);
       const server = await device.gatt?.connect();
-      const service = await server?.getPrimaryService('heart_rate');
-      const characteristic = await service?.getCharacteristic('heart_rate_measurement');
       
-      if (characteristic) {
+      // Try to find a supported health service
+      let service;
+      try {
+        service = await server?.getPrimaryService('heart_rate');
+      } catch (e) {
+        console.log("Heart rate service not found, device might not support standard GATT HR.");
+      }
+
+      if (service) {
+        const characteristic = await service.getCharacteristic('heart_rate_measurement');
         await characteristic.startNotifications();
         characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
         setHrCharacteristic(characteristic);
-        setConnectedDevice(device);
-        setDiscoveredDevice(null);
-        
-        device.addEventListener('gattserverdisconnected', () => {
-          setConnectedDevice(null);
-          setLiveHeartRate(null);
-          toast.error("Device disconnected");
+        toast.success("Live heart rate stream active!");
+      } else {
+        toast.warning("Connected, but no standard health services found.", {
+          description: "This device may use a proprietary protocol not supported by web browsers."
         });
-
-        toast.success(`Connected to ${device.name}!`);
       }
+
+      setConnectedDevice(device);
+      setDiscoveredDevice(null);
+      
+      device.addEventListener('gattserverdisconnected', () => {
+        setConnectedDevice(null);
+        setLiveHeartRate(null);
+        toast.error("Device disconnected");
+      });
+
     } catch (error) {
       console.error("Connection Error:", error);
       toast.error("Failed to connect to device.");
@@ -369,7 +380,7 @@ const HealthDashboard = () => {
                           <Bluetooth className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold">{discoveredDevice.name}</p>
+                          <p className="text-sm font-bold">{discoveredDevice.name || 'Unknown Device'}</p>
                           <p className="text-[10px] text-muted-foreground">Ready to connect</p>
                         </div>
                       </div>
@@ -388,9 +399,9 @@ const HealthDashboard = () => {
                     <Search className="h-12 w-12 text-primary animate-pulse" />
                     <div className="absolute inset-0 h-12 w-12 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
                   </div>
-                  <p className="text-sm font-medium text-primary">Scanning for devices...</p>
+                  <p className="text-sm font-medium text-primary">Scanning for all devices...</p>
                   <p className="text-[10px] text-muted-foreground text-center px-4">
-                    A browser popup should appear. Select your device there.
+                    A browser popup should appear. You can now select <strong>any</strong> nearby Bluetooth device.
                   </p>
                 </div>
               ) : (

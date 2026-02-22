@@ -66,7 +66,6 @@ export const medicines: Medicine[] = [
       { pharmacyId: "p4", price: 118, stock: 25, discount: 0 }
     ]
   },
-  // ... (rest of the medicines)
 ];
 
 export const medicineCategories = ["All", "Fever", "Cold & Cough", "Skin Diseases", "Chronic Diseases"];
@@ -82,14 +81,31 @@ export interface Disease {
   category: string;
 }
 
+// Sorted from Newest (ID 3) to Oldest (ID 1)
 export const diseases: Disease[] = [
+  {
+    id: "3", name: "Dengue Fever", category: "Infectious",
+    description: "A mosquito-borne viral disease occurring in tropical and subtropical areas.",
+    causes: ["Aedes mosquito bite", "Dengue virus (DENV)", "Stagnant water near living areas"],
+    symptoms: ["High fever", "Severe headache", "Pain behind eyes", "Joint and muscle pain", "Skin rash"],
+    cures: ["Hydration", "Complete bed rest", "Monitoring platelet count"],
+    medicines: ["Paracetamol (Avoid Aspirin/Ibuprofen)", "Electrolyte solutions"],
+  },
+  {
+    id: "2", name: "Hypertension", category: "Chronic",
+    description: "A condition in which the force of the blood against the artery walls is too high.",
+    causes: ["High salt intake", "Lack of physical activity", "Stress", "Genetics"],
+    symptoms: ["Headaches", "Shortness of breath", "Nosebleeds", "Dizziness"],
+    cures: ["Low-sodium diet", "Regular exercise", "Stress management"],
+    medicines: ["Amlodipine", "Losartan", "Telmisartan"],
+  },
   {
     id: "1", name: "Common Cold", category: "Respiratory",
     description: "A viral infection of the upper respiratory tract affecting the nose and throat.",
-    causes: ["Rhinovirus", "Coronavirus (common cold type)", "Close contact with infected person", "Weakened immune system"],
-    symptoms: ["Runny or stuffy nose", "Sore throat", "Cough", "Mild body aches", "Sneezing", "Low-grade fever"],
-    cures: ["Rest and hydration", "Warm fluids and soups", "Steam inhalation", "Saltwater gargle"],
-    medicines: ["Paracetamol", "Cetirizine", "Nasal decongestant spray", "Vitamin C supplements"],
+    causes: ["Rhinovirus", "Coronavirus (common cold type)", "Close contact with infected person"],
+    symptoms: ["Runny or stuffy nose", "Sore throat", "Cough", "Sneezing", "Low-grade fever"],
+    cures: ["Rest and hydration", "Warm fluids", "Steam inhalation"],
+    medicines: ["Paracetamol", "Cetirizine", "Vitamin C"],
   },
 ];
 

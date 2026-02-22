@@ -1,7 +1,10 @@
+"use client";
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,10 +24,39 @@ const Auth = () => {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
+    const phone = formData.get("phone") as string;
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName: name });
+      const user = userCredential.user;
+
+      // Update Firebase Auth profile
+      await updateProfile(user, { displayName: name });
+
+      // Store additional data in Firestore
+      await setDoc(doc(db, "profiles", user.uid), {
+        personal: {
+          fullName: name,
+          phone: phone,
+          email: email,
+          dob: "",
+          gender: "",
+          address: ""
+        },
+        medical: {
+          bloodGroup: "",
+          allergies: "",
+          chronicConditions: "",
+          medications: ""
+        },
+        emergency: {
+          contactName: "",
+          relation: "",
+          contactPhone: ""
+        },
+        createdAt: new Date().toISOString()
+      });
+
       toast.success("Account created successfully!");
       navigate("/");
     } catch (error: any) {
@@ -107,6 +139,10 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Full Name</Label>
                     <Input id="signup-name" name="name" placeholder="John Doe" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">Mobile Number</Label>
+                    <Input id="signup-phone" name="phone" type="tel" placeholder="+1 (555) 000-0000" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>

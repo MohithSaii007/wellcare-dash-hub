@@ -6,7 +6,7 @@ import {
   TrendingUp, AlertCircle, Calendar, ChevronRight,
   Info, Bell, Download, Share2, Trash2, Loader2,
   ArrowUpRight, ArrowDownRight, Minus, Watch, RefreshCw,
-  Bluetooth, Smartphone, Battery, Signal, X, Search, CheckCircle2
+  Bluetooth, Smartphone, Battery, Signal, X, Search, CheckCircle2, ExternalLink
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -96,7 +96,7 @@ const HealthDashboard = () => {
 
   const startDiscovery = async () => {
     if (!navigator.bluetooth) {
-      toast.error("Web Bluetooth is not supported in this browser.");
+      toast.error("Web Bluetooth is not supported in this browser. Please use Chrome or Edge.");
       return;
     }
 
@@ -104,19 +104,33 @@ const HealthDashboard = () => {
     setDiscoveredDevice(null);
     
     try {
+      // The browser's native device picker should appear here
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: ['heart_rate'] }],
         optionalServices: ['battery_service', 'device_information']
       });
       
       setDiscoveredDevice(device);
-      toast.success("Device discovered!", {
-        description: `Found ${device.name}. Click connect to start streaming.`
+      toast.success("Device found!", {
+        description: `Selected ${device.name}. Click connect to start streaming.`
       });
     } catch (error: any) {
       console.error("Bluetooth Discovery Error:", error);
-      if (error.name !== 'NotFoundError') {
-        toast.error("Discovery failed. Ensure Bluetooth is enabled.");
+      
+      if (error.name === 'NotFoundError') {
+        toast.info("Discovery cancelled by user.");
+      } else if (error.name === 'SecurityError') {
+        toast.error("Permission Denied", {
+          description: "The browser blocked Bluetooth access. Try opening the app in a new tab."
+        });
+      } else if (error.name === 'NotAllowedError') {
+        toast.error("Bluetooth Permission Required", {
+          description: "Please allow Bluetooth access in your browser settings."
+        });
+      } else {
+        toast.error("Discovery failed", {
+          description: "Ensure Bluetooth is ON and your device is in pairing mode."
+        });
       }
     } finally {
       setIsPairing(false);
@@ -376,7 +390,7 @@ const HealthDashboard = () => {
                   </div>
                   <p className="text-sm font-medium text-primary">Scanning for devices...</p>
                   <p className="text-[10px] text-muted-foreground text-center px-4">
-                    Please select your device from the browser popup to continue.
+                    A browser popup should appear. Select your device there.
                   </p>
                 </div>
               ) : (
@@ -464,23 +478,19 @@ const HealthDashboard = () => {
           </Card>
 
           <Card className="card-shadow">
-            <CardHeader><CardTitle className="text-lg">Device Health</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg">Troubleshooting</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Battery className="h-5 w-5 text-success" />
-                    <span className="text-sm font-medium">Battery Level</span>
-                  </div>
-                  <span className="text-sm font-bold">{connectedDevice ? "84%" : "--"}</span>
+              <div className="p-4 rounded-xl bg-warning/5 border border-warning/20">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-warning uppercase mb-2">
+                  <AlertCircle className="h-3 w-3" />
+                  Connection Tips
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Signal className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-medium">Signal Strength</span>
-                  </div>
-                  <span className="text-sm font-bold">{connectedDevice ? "Excellent" : "--"}</span>
-                </div>
+                <ul className="text-[10px] text-muted-foreground space-y-2 list-disc pl-3">
+                  <li>Ensure your watch is in <strong>Pairing Mode</strong>.</li>
+                  <li>Check if your browser has <strong>Bluetooth Permissions</strong> enabled.</li>
+                  <li>If the popup doesn't appear, try opening the app in a <strong>New Tab</strong>.</li>
+                  <li>Web Bluetooth requires <strong>Chrome, Edge, or Opera</strong>.</li>
+                </ul>
               </div>
               
               <div className="p-4 rounded-xl bg-muted/30 border border-dashed">

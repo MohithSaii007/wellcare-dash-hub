@@ -37,7 +37,6 @@ const Index = () => {
 
   const healthScore = useMemo(() => {
     if (latestVitals.length === 0) return 0;
-    // Simple logic: more readings = better score, but capped at 95
     const base = 65;
     const bonus = Math.min(30, latestVitals.length * 5);
     return base + bonus;
@@ -56,32 +55,36 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden min-h-[600px] flex items-center">
         <div className="absolute inset-0">
           <img src={heroImage} alt="Healthcare professionals" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 to-foreground/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/60 to-transparent" />
         </div>
-        <div className="container relative py-20 md:py-32">
-          <div className="max-w-xl animate-fade-in">
-            <h1 className="text-4xl font-heading font-extrabold tracking-tight text-primary-foreground md:text-5xl">
-              Your Health, <span className="text-secondary">Our Priority</span>
+        <div className="container relative py-20">
+          <div className="max-w-2xl animate-fade-in">
+            <Badge className="mb-6 bg-primary/20 text-primary-foreground border-none px-4 py-1 text-xs font-bold uppercase tracking-widest">
+              Next-Gen Healthcare
+            </Badge>
+            <h1 className="text-5xl font-heading font-extrabold tracking-tight text-primary-foreground md:text-7xl leading-[1.1]">
+              Your Health, <br />
+              <span className="text-secondary">Our Priority</span>
             </h1>
-            <p className="mt-4 text-lg text-primary-foreground/80">
+            <p className="mt-6 text-xl text-primary-foreground/80 max-w-lg leading-relaxed">
               The most advanced healthcare ecosystem. AI-powered diagnostics, real-time price comparison, and smart refill tracking.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-10 flex flex-wrap gap-4">
               <Button 
                 size="lg" 
-                className="hero-gradient border-none" 
+                className="hero-gradient border-none h-14 px-8 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20" 
                 onClick={(e) => handleProtectedClick(e, "/ai-assistant")}
                 asChild
               >
-                <Link to="/ai-assistant">Try AI Assistant <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Link to="/ai-assistant">Try AI Assistant <ArrowRight className="ml-2 h-5 w-5" /></Link>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                className="bg-white/10 text-white border-white/20 hover:bg-white/20 h-14 px-8 text-lg font-bold rounded-2xl backdrop-blur-sm"
                 onClick={(e) => handleProtectedClick(e, "/search")}
                 asChild
               >
@@ -94,50 +97,50 @@ const Index = () => {
 
       {/* Dashboard Stats & Health Score */}
       {user && (
-        <section className="container py-12 animate-fade-in">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="card-shadow border-primary/20 bg-primary/5">
+        <section className="container py-16 animate-fade-in">
+          <div className="grid gap-8 md:grid-cols-3">
+            <Card className="card-shadow border-primary/10 bg-primary/5 rounded-3xl overflow-hidden">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" /> Health Score
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" /> Health Score
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 <div className="flex items-end gap-2">
-                  <span className="text-4xl font-bold text-primary">{healthScore}</span>
-                  <span className="text-sm text-muted-foreground mb-1">/ 100</span>
+                  <span className="text-5xl font-extrabold text-primary tracking-tighter">{healthScore}</span>
+                  <span className="text-lg text-muted-foreground mb-1 font-bold">/ 100</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Based on your recent vitals and activity.</p>
+                <p className="text-sm text-muted-foreground mt-4 leading-relaxed">Based on your recent vitals and activity tracking.</p>
               </CardContent>
             </Card>
 
-            <Card className="card-shadow border-success/20 bg-success/5">
+            <Card className="card-shadow border-success/10 bg-success/5 rounded-3xl overflow-hidden">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-success" /> Daily Health Tip
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-success flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" /> Daily Health Tip
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm font-medium italic">"Drinking 500ml of water right after waking up boosts metabolism by 24%."</p>
-                <Badge variant="outline" className="mt-3 text-[10px] bg-white">AI Generated</Badge>
+              <CardContent className="pt-4">
+                <p className="text-lg font-semibold italic leading-relaxed text-foreground/80">"Drinking 500ml of water right after waking up boosts metabolism by 24%."</p>
+                <Badge variant="outline" className="mt-6 text-[10px] bg-white font-bold uppercase tracking-tighter">AI Generated</Badge>
               </CardContent>
             </Card>
 
-            <Card className="card-shadow border-accent/20 bg-accent/5">
+            <Card className="card-shadow border-accent/10 bg-accent/5 rounded-3xl overflow-hidden">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-accent" /> Recent Activity
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-accent flex items-center gap-2">
+                  <Activity className="h-4 w-4" /> Recent Activity
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {latestVitals.slice(0, 2).map((v, i) => (
-                    <div key={i} className="flex justify-between text-xs">
-                      <span className="capitalize">{v.type} Reading</span>
-                      <span className="font-bold">{v.value} {v.unit}</span>
+              <CardContent className="pt-4">
+                <div className="space-y-3">
+                  {latestVitals.slice(0, 3).map((v, i) => (
+                    <div key={i} className="flex justify-between items-center p-2 rounded-xl bg-white/50 border border-white/20">
+                      <span className="capitalize text-xs font-bold text-muted-foreground">{v.type} Reading</span>
+                      <span className="font-extrabold text-sm text-accent">{v.value} {v.unit}</span>
                     </div>
                   ))}
-                  {latestVitals.length === 0 && <p className="text-xs text-muted-foreground">No recent readings found.</p>}
+                  {latestVitals.length === 0 && <p className="text-sm text-muted-foreground py-4 text-center italic">No recent readings found.</p>}
                 </div>
               </CardContent>
             </Card>
@@ -146,8 +149,8 @@ const Index = () => {
       )}
 
       {/* Services Grid */}
-      <section className={`container ${user ? 'py-8' : '-mt-8 relative z-10 pb-16'}`}>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <section className={`container ${user ? 'py-12' : '-mt-20 relative z-10 pb-24'}`}>
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <ServiceCard
             title="AI Symptom Checker"
             description="Clinical-grade analysis to match you with the right specialist instantly."
@@ -188,41 +191,43 @@ const Index = () => {
       </section>
 
       {/* Advanced Features Showcase */}
-      <section className="container py-16">
-        <div className="grid gap-12 lg:grid-cols-2 items-center">
+      <section className="container py-24">
+        <div className="grid gap-16 lg:grid-cols-2 items-center">
           <div className="animate-fade-in">
-            <Badge className="mb-4 bg-primary/10 text-primary border-none">NEW FEATURES</Badge>
-            <h2 className="text-3xl font-heading font-bold mb-6">Next-Gen Healthcare Tools</h2>
-            <div className="space-y-8">
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
-                  <Zap className="h-6 w-6" />
+            <Badge className="mb-6 bg-primary/10 text-primary border-none px-4 py-1 font-bold uppercase tracking-widest text-xs">
+              Advanced Ecosystem
+            </Badge>
+            <h2 className="text-4xl font-heading font-extrabold mb-8 leading-tight">Next-Gen Healthcare Tools <br />At Your Fingertips</h2>
+            <div className="space-y-10">
+              <div className="flex gap-6">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-success/10 text-success shadow-sm">
+                  <Zap className="h-7 w-7" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg">Medicine Price Comparison</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-bold text-xl mb-2">Medicine Price Comparison</h4>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     Don't overpay for your health. Our engine scans partnered pharmacies in real-time to find the lowest prices, fastest delivery, and best discounts for every medicine.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <RefreshCw className="h-6 w-6" />
+              <div className="flex gap-6">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+                  <RefreshCw className="h-7 w-7" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg">Smart Refill Prediction (AI)</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-bold text-xl mb-2">Smart Refill Prediction (AI)</h4>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     Our AI tracks your dosage and purchase history to predict exactly when you'll run out. Get reminders 3 days early and refill with a single tap.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                  <Activity className="h-6 w-6" />
+              <div className="flex gap-6">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent shadow-sm">
+                  <Activity className="h-7 w-7" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-lg">Real-time Health Vitals</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <h4 className="font-bold text-xl mb-2">Real-time Health Vitals</h4>
+                  <p className="text-base text-muted-foreground leading-relaxed">
                     Monitor BP, Sugar, and Heart Rate with smart trend analysis. Get instant alerts if your readings fall outside the normal range.
                   </p>
                 </div>
@@ -230,27 +235,30 @@ const Index = () => {
             </div>
           </div>
           <div className="relative animate-fade-in" style={{ animationDelay: "200ms" }}>
-            <div className="aspect-square rounded-3xl hero-gradient opacity-5 absolute -inset-4 rotate-3" />
-            <div className="relative rounded-2xl border bg-card p-8 card-shadow overflow-hidden">
-              <div className="absolute top-0 right-0 p-4">
-                <Badge variant="outline" className="bg-success/5 text-success border-success/20">AI Verified</Badge>
+            <div className="aspect-square rounded-[3rem] hero-gradient opacity-5 absolute -inset-8 rotate-6" />
+            <div className="relative rounded-[2.5rem] border bg-card p-10 card-shadow overflow-hidden border-border/50">
+              <div className="absolute top-0 right-0 p-6">
+                <Badge variant="outline" className="bg-success/5 text-success border-success/20 font-bold uppercase tracking-tighter">AI Verified</Badge>
               </div>
-              <h3 className="text-xl font-bold mb-4">Refill Prediction</h3>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-bold">Paracetamol 500mg</span>
-                    <span className="text-destructive font-bold">2 days left</span>
+              <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                <RefreshCw className="h-6 w-6 text-primary" />
+                Refill Prediction
+              </h3>
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-extrabold text-lg">Paracetamol 500mg</span>
+                    <span className="text-destructive font-bold text-sm bg-destructive/10 px-3 py-1 rounded-full">2 days left</span>
                   </div>
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
                     <div className="h-full bg-destructive animate-pulse" style={{ width: '15%' }} />
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-muted/30 border border-dashed">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">AI Insight</p>
-                  <p className="text-xs italic">"Based on your 2x daily dosage, your supply will deplete on Friday. Would you like to refill now?"</p>
+                <div className="p-6 rounded-3xl bg-muted/30 border border-dashed border-muted-foreground/20">
+                  <p className="text-xs text-muted-foreground uppercase font-bold mb-3 tracking-widest">AI Insight</p>
+                  <p className="text-sm italic leading-relaxed text-foreground/80">"Based on your 2x daily dosage, your supply will deplete on Friday. Would you like to refill now?"</p>
                 </div>
-                <Button className="w-full hero-gradient shadow-lg" onClick={() => navigate("/refills")}>One-Tap Refill Now</Button>
+                <Button className="w-full hero-gradient shadow-xl shadow-primary/20 h-14 text-lg font-bold rounded-2xl" onClick={() => navigate("/refills")}>One-Tap Refill Now</Button>
               </div>
             </div>
           </div>
@@ -258,50 +266,53 @@ const Index = () => {
       </section>
 
       {/* Why Choose Us */}
-      <section className="bg-muted/50 py-16">
+      <section className="bg-muted/30 py-24">
         <div className="container">
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <div className="grid gap-16 lg:grid-cols-2 items-center">
             <div className="animate-fade-in">
-              <h2 className="text-3xl font-heading font-bold mb-6">Why Choose MedCare?</h2>
-              <div className="space-y-6">
+              <Badge className="mb-6 bg-secondary/10 text-secondary border-none px-4 py-1 font-bold uppercase tracking-widest text-xs">
+                The MedCare Advantage
+              </Badge>
+              <h2 className="text-4xl font-heading font-extrabold mb-10 leading-tight">Why Thousands Trust <br />MedCare Every Day</h2>
+              <div className="grid gap-8 sm:grid-cols-2">
                 {[
-                  { title: "24/7 AI Support", desc: "Get instant health insights anytime, anywhere with our intelligent assistant.", icon: Zap },
-                  { title: "Verified Professionals", desc: "All our doctors and hospitals are strictly verified for quality care.", icon: ShieldCheck },
-                  { title: "Fast Home Delivery", desc: "Medicines delivered to your doorstep within hours of ordering.", icon: Clock },
-                  { title: "Complete Health Records", desc: "Manage your medical history and emergency contacts in one secure place.", icon: CheckCircle2 }
+                  { title: "24/7 AI Support", desc: "Get instant health insights anytime, anywhere with our assistant.", icon: Zap, color: "text-primary" },
+                  { title: "Verified Pros", desc: "All doctors and hospitals are strictly verified for quality care.", icon: ShieldCheck, color: "text-success" },
+                  { title: "Fast Delivery", desc: "Medicines delivered to your doorstep within hours of ordering.", icon: Clock, color: "text-accent" },
+                  { title: "Secure Records", desc: "Manage your medical history in one secure, encrypted place.", icon: CheckCircle2, color: "text-secondary" }
                 ].map((feature, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <feature.icon className="h-5 w-5" />
+                  <div key={i} className="flex flex-col gap-4 p-6 rounded-3xl bg-white border border-border/50 shadow-sm hover:shadow-md transition-shadow">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-muted ${feature.color}`}>
+                      <feature.icon className="h-6 w-6" />
                     </div>
                     <div>
-                      <h4 className="font-bold">{feature.title}</h4>
-                      <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                      <h4 className="font-bold text-lg mb-1">{feature.title}</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
             <div className="relative animate-fade-in" style={{ animationDelay: "200ms" }}>
-              <div className="aspect-square rounded-3xl hero-gradient opacity-10 absolute -inset-4 rotate-3" />
-              <div className="relative rounded-2xl border bg-card p-8 card-shadow">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center text-success">
-                    <Shield className="h-6 w-6" />
+              <div className="aspect-square rounded-[3rem] hero-gradient opacity-10 absolute -inset-8 rotate-3" />
+              <div className="relative rounded-[2.5rem] border bg-card p-12 card-shadow border-border/50">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="h-14 w-14 rounded-2xl bg-success/10 flex items-center justify-center text-success shadow-sm">
+                    <Shield className="h-7 w-7" />
                   </div>
                   <div>
-                    <h4 className="font-bold">Secure & Private</h4>
-                    <p className="text-xs text-muted-foreground">Your health data is encrypted</p>
+                    <h4 className="font-bold text-xl">Secure & Private</h4>
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">End-to-End Encrypted</p>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                <p className="text-lg text-muted-foreground leading-relaxed mb-10 italic">
                   "MedCare has completely changed how I manage my family's health. From checking symptoms to getting medicines delivered, it's all so seamless and trustworthy."
                 </p>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted" />
+                <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full bg-muted border-2 border-white shadow-sm" />
                   <div>
-                    <p className="text-sm font-bold">Sarah Jenkins</p>
-                    <p className="text-xs text-muted-foreground">Verified User</p>
+                    <p className="text-lg font-bold">Sarah Jenkins</p>
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Verified User</p>
                   </div>
                 </div>
               </div>
@@ -311,18 +322,23 @@ const Index = () => {
       </section>
 
       {/* Stats */}
-      <section className="container py-16">
-        <div className="rounded-2xl hero-gradient p-8 md:p-12">
-          <div className="grid gap-8 text-center sm:grid-cols-3">
+      <section className="container py-24">
+        <div className="rounded-[3rem] hero-gradient p-12 md:p-20 shadow-2xl shadow-primary/30 relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+          
+          <div className="grid gap-12 text-center sm:grid-cols-3 relative z-10">
             {[
               { label: "Diseases Covered", value: "500+", icon: Activity },
               { label: "Verified Doctors", value: "200+", icon: Stethoscope },
               { label: "Medicines Available", value: "1000+", icon: Shield },
             ].map((stat) => (
               <div key={stat.label} className="animate-fade-in">
-                <stat.icon className="mx-auto mb-2 h-8 w-8 text-primary-foreground/80" />
-                <div className="text-3xl font-heading font-extrabold text-primary-foreground">{stat.value}</div>
-                <div className="text-sm text-primary-foreground/70">{stat.label}</div>
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md">
+                  <stat.icon className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <div className="text-5xl font-heading font-extrabold text-primary-foreground tracking-tighter mb-2">{stat.value}</div>
+                <div className="text-sm font-bold text-primary-foreground/70 uppercase tracking-widest">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -330,21 +346,25 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="container pb-16">
-        <div className="rounded-3xl border bg-card p-8 md:p-16 text-center card-shadow relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-12 -mr-12 h-64 w-64 rounded-full bg-primary/5" />
-          <div className="absolute bottom-0 left-0 -mb-12 -ml-12 h-64 w-64 rounded-full bg-secondary/5" />
+      <section className="container pb-24">
+        <div className="rounded-[3.5rem] border bg-card p-12 md:p-24 text-center card-shadow relative overflow-hidden border-border/50">
+          <div className="absolute top-0 right-0 -mt-24 -mr-24 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute bottom-0 left-0 -mb-24 -ml-24 h-96 w-96 rounded-full bg-secondary/5 blur-3xl" />
           
-          <div className="relative z-10 max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">Ready to take control of your health?</h2>
-            <p className="text-muted-foreground mb-8">Join thousands of users who trust MedCare for their daily healthcare needs.</p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="hero-gradient border-none" asChild>
+          <div className="relative z-10 max-w-3xl mx-auto">
+            <Badge className="mb-6 bg-primary/10 text-primary border-none px-4 py-1 font-bold uppercase tracking-widest text-xs">
+              Join the Revolution
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-heading font-extrabold mb-8 leading-tight">Ready to take control <br />of your health?</h2>
+            <p className="text-xl text-muted-foreground mb-12 leading-relaxed">Join thousands of users who trust MedCare for their daily healthcare needs. Experience the future of medicine today.</p>
+            <div className="flex flex-wrap justify-center gap-6">
+              <Button size="lg" className="hero-gradient border-none h-16 px-10 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20" asChild>
                 <Link to="/auth">Get Started Now</Link>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
+                className="h-16 px-10 text-xl font-bold rounded-2xl border-primary/20 hover:bg-primary/5"
                 onClick={(e) => handleProtectedClick(e, "/appointments")}
                 asChild
               >

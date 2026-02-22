@@ -6,7 +6,7 @@ import {
   TrendingUp, AlertCircle, Calendar, ChevronRight,
   Info, Bell, Download, Share2, Trash2, Loader2,
   ArrowUpRight, ArrowDownRight, Minus, Watch, RefreshCw,
-  Bluetooth, Smartphone, Battery, Signal
+  Bluetooth, Smartphone, Battery, Signal, X
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -43,15 +43,16 @@ const HealthDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isPairing, setIsPairing] = useState(false);
-  const [connectedDevice, setConnectedDevice] = useState<string | null>(null);
+  
+  // Bluetooth State
+  const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
+  const [hrCharacteristic, setHrCharacteristic] = useState<BluetoothRemoteGATTCharacteristic | null>(null);
+  const [liveHeartRate, setLiveHeartRate] = useState<number | null>(null);
+  
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedType, setSelectedType] = useState<"bp" | "sugar" | "weight" | "heart">("bp");
   const [inputValue, setInputValue] = useState("");
   const [inputValue2, setInputValue2] = useState("");
-  
-  // Real-time Live Data State
-  const [liveHeartRate, setLiveHeartRate] = useState(72);
-  const [liveBP, setLiveBP] = useState({ sys: 120, dia: 80 });
 
   useEffect(() => {
     if (!user) {
@@ -78,42 +79,82 @@ const HealthDashboard = () => {
     return () => unsubscribe();
   }, [user]);
 
-  // Simulate Real-time Data Stream when connected
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (connectedDevice) {
-      interval = setInterval(() => {
-        setLiveHeartRate(prev => prev + (Math.random() > 0.5 ? 1 : -1));
-        setLiveBP(prev => ({
-          sys: prev.sys + (Math.random() > 0.5 ? 1 : -1),
-          dia: prev.dia + (Math.random() > 0.5 ? 1 : -1)
-        }));
-      }, 3000);
+  // Bluetooth Data Parser
+  const handleCharacteristicValueChanged = (event: any) => {
+    const value = event.target.value;
+    // Heart Rate Measurement format: 
+    // Flags (1 byte), Heart Rate Value (1 or 2 bytes)
+    const flags = value.getUint8(0);
+    const rate16Bits = flags & 0x1;
+    let heartRate;
+    if (rate16Bits) {
+      heartRate = value.getUint16(1, true);
+    } else {
+      heartRate = value.getUint8(1);
     }
-    return () => clearInterval(interval);
-  }, [connectedDevice]);
+    setLiveHeartRate(heartRate);
+  };
 
   const handlePairDevice = async () => {
+    if (!navigator.bluetooth) {
+      toast.error("Web Bluetooth is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
     setIsPairing(true);
-    toast.info("Scanning for nearby Bluetooth devices...");
-    
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    setConnectedDevice("Boat Storm Connect");
-    setIsPairing(false);
-    toast.success("Smart Watch Connected!", {
-      description: "Real-time vitals are now streaming to your dashboard."
-    });
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: ['heart_rate'] }],
+        optionalServices: ['battery_service', 'device_information']
+      });
+
+      toast.info(`Connecting to ${device.name}...`);
+      
+      const server = await device.gatt?.connect();
+      const service = await server?.getPrimaryService('heart_rate');
+      const characteristic = await service?.getCharacteristic('heart_rate_measurement');
+      
+      if (characteristic) {
+        await characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+        setHrCharacteristic(characteristic);
+        setConnectedDevice(device);
+        
+        device.addEventListener('gattserverdisconnected', () => {
+          setConnectedDevice(null);
+          setLiveHeartRate(null);
+          toast.error("Device disconnected");
+        });
+
+        toast.success(`Connected to ${device.name}!`, {
+          description: "Real-time heart rate data is now streaming."
+        });
+      }
+    } catch (error: any) {
+      console.error("Bluetooth Error:", error);
+      if (error.name !== 'NotFoundError') {
+        toast.error("Failed to connect to Bluetooth device.");
+      }
+    } finally {
+      setIsPairing(false);
+    }
+  };
+
+  const handleDisconnect = () => {
+    if (connectedDevice?.gatt?.connected) {
+      connectedDevice.gatt.disconnect();
+    }
+    setConnectedDevice(null);
+    setLiveHeartRate(null);
+    setHrCharacteristic(null);
   };
 
   const handleSyncWatch = async () => {
-    if (!user || !connectedDevice) {
-      toast.error("Please connect your watch first.");
+    if (!user || !liveHeartRate) {
+      toast.error("No live data to sync.");
       return;
     }
     setIsSyncing(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
     
     try {
       await addDoc(collection(db, "health_readings"), {
@@ -122,24 +163,13 @@ const HealthDashboard = () => {
         value: liveHeartRate,
         unit: "bpm",
         timestamp: Timestamp.now(),
-        status: "normal",
+        status: liveHeartRate > 100 ? "high" : liveHeartRate < 60 ? "low" : "normal",
         source: "watch"
       });
       
-      await addDoc(collection(db, "health_readings"), {
-        userId: user.uid,
-        type: "bp",
-        value: liveBP.sys,
-        value2: liveBP.dia,
-        unit: "mmHg",
-        timestamp: Timestamp.now(),
-        status: "normal",
-        source: "watch"
-      });
-      
-      toast.success("Vitals synced to medical history.");
+      toast.success("Heart rate reading synced to your medical history.");
     } catch (error) {
-      toast.error("Sync failed.");
+      toast.error("Failed to sync data.");
     } finally {
       setIsSyncing(false);
     }
@@ -218,10 +248,15 @@ const HealthDashboard = () => {
                 Pair Smart Watch
               </Button>
             ) : (
-              <Button variant="outline" className="gap-2" onClick={handleSyncWatch} disabled={isSyncing}>
-                {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Watch className="h-4 w-4" />}
-                Sync Now
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" className="gap-2" onClick={handleSyncWatch} disabled={isSyncing || !liveHeartRate}>
+                  {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Watch className="h-4 w-4" />}
+                  Sync Reading
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleDisconnect} className="text-destructive">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             )}
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
@@ -273,35 +308,36 @@ const HealthDashboard = () => {
                 <Watch className="h-5 w-5 text-primary" />
                 Live Stream
               </CardTitle>
-              <CardDescription>{connectedDevice || "No device connected"}</CardDescription>
+              <CardDescription>{connectedDevice?.name || "No device connected"}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-muted-foreground uppercase">Heart Rate</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold tracking-tighter">{connectedDevice ? liveHeartRate : "--"}</span>
+                    <span className="text-4xl font-bold tracking-tighter">{liveHeartRate || "--"}</span>
                     <span className="text-sm text-muted-foreground">bpm</span>
                   </div>
                 </div>
-                <Heart className={`h-10 w-10 text-destructive ${connectedDevice ? 'animate-pulse' : 'opacity-20'}`} />
+                <Heart className={`h-10 w-10 text-destructive ${liveHeartRate ? 'animate-pulse' : 'opacity-20'}`} />
               </div>
               
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-xs font-bold text-muted-foreground uppercase">Blood Pressure</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase">Connection Status</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold tracking-tighter">
-                      {connectedDevice ? `${liveBP.sys}/${liveBP.dia}` : "--/--"}
+                    <span className="text-sm font-bold tracking-tighter">
+                      {connectedDevice ? "Stable Connection" : "Disconnected"}
                     </span>
-                    <span className="text-sm text-muted-foreground">mmHg</span>
                   </div>
                 </div>
-                <Activity className={`h-10 w-10 text-primary ${connectedDevice ? 'animate-bounce' : 'opacity-20'}`} />
+                <Signal className={`h-10 w-10 text-primary ${connectedDevice ? 'opacity-100' : 'opacity-20'}`} />
               </div>
 
               {!connectedDevice && (
-                <Button className="w-full hero-gradient" onClick={handlePairDevice}>Connect Watch</Button>
+                <Button className="w-full hero-gradient" onClick={handlePairDevice} disabled={isPairing}>
+                  {isPairing ? "Scanning..." : "Connect Real Watch"}
+                </Button>
               )}
             </CardContent>
           </Card>
@@ -407,7 +443,7 @@ const HealthDashboard = () => {
               </div>
               
               {connectedDevice && (
-                <Button variant="ghost" className="w-full text-destructive hover:bg-destructive/5" onClick={() => setConnectedDevice(null)}>
+                <Button variant="ghost" className="w-full text-destructive hover:bg-destructive/5" onClick={handleDisconnect}>
                   Disconnect Device
                 </Button>
               )}

@@ -562,7 +562,8 @@ const HealthDashboard = () => {
                 )}
               </div>
             </CardContent>
-          </Card>
+          </AreaChart>
+        </Card>
 
           <Card className="card-shadow">
             <CardHeader><CardTitle className="text-lg">Troubleshooting</CardTitle></CardHeader>

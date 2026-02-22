@@ -103,6 +103,7 @@ const HealthDashboard = () => {
 
     setIsPairing(true);
     try {
+      // Requesting real Bluetooth devices with Heart Rate service
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: ['heart_rate'] }],
         optionalServices: ['battery_service', 'device_information']
@@ -133,7 +134,7 @@ const HealthDashboard = () => {
     } catch (error: any) {
       console.error("Bluetooth Error:", error);
       if (error.name !== 'NotFoundError') {
-        toast.error("Failed to connect to Bluetooth device.");
+        toast.error("Failed to connect to Bluetooth device. Ensure it is in pairing mode.");
       }
     } finally {
       setIsPairing(false);
@@ -238,7 +239,7 @@ const HealthDashboard = () => {
               </div>
               Real-time Vitals
             </h1>
-            <p className="mt-1 text-muted-foreground">Live monitoring from your connected smart watch.</p>
+            <p className="mt-1 text-muted-foreground">Connect your physical smart watch via Bluetooth.</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -335,9 +336,14 @@ const HealthDashboard = () => {
               </div>
 
               {!connectedDevice && (
-                <Button className="w-full hero-gradient" onClick={handlePairDevice} disabled={isPairing}>
-                  {isPairing ? "Scanning..." : "Connect Real Watch"}
-                </Button>
+                <div className="space-y-4">
+                  <Button className="w-full hero-gradient" onClick={handlePairDevice} disabled={isPairing}>
+                    {isPairing ? "Scanning..." : "Connect Real Watch"}
+                  </Button>
+                  <p className="text-[10px] text-center text-muted-foreground">
+                    Ensure your watch is in pairing mode and supports standard Heart Rate services.
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>

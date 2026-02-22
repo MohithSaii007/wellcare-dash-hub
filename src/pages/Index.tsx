@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import ServiceCard from "@/components/ServiceCard";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-medical.jpg";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";

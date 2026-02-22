@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -12,10 +12,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Heart, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate("/");
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,14 +36,15 @@ const Auth = () => {
     const phone = formData.get("phone") as string;
 
     try {
+      console.log("Attempting signup for:", email);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const newUser = userCredential.user;
 
       // Update Firebase Auth profile
-      await updateProfile(user, { displayName: name });
+      await updateProfile(newUser, { displayName: name });
 
       // Store additional data in Firestore
-      await setDoc(doc(db, "profiles", user.uid), {
+      await setDoc(doc(db, "profiles", newUser.uid), {
         personal: {
           fullName: name,
           phone: phone,
@@ -60,7 +70,8 @@ const Auth = () => {
       toast.success("Account created successfully!");
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Failed to create account");
+      console.error("Signup error:", error);
+      toast.error(error.message || "Failed to create account. Please check your details.");
     } finally {
       setLoading(false);
     }
@@ -78,11 +89,20 @@ const Auth = () => {
       toast.success("Logged in successfully!");
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Failed to login");
+      console.error("Login error:", error);
+      toast.error(error.message || "Failed to login. Please check your credentials.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">

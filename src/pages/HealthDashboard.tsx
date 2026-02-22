@@ -44,7 +44,7 @@ const HealthDashboard = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isPairing, setIsPairing] = useState(false);
   
-  // Bluetooth State (using any to avoid global type issues)
+  // Bluetooth State
   const [connectedDevice, setConnectedDevice] = useState<any>(null);
   const [discoveredDevice, setDiscoveredDevice] = useState<any>(null);
   const [liveHeartRate, setLiveHeartRate] = useState<number | null>(null);
@@ -180,7 +180,9 @@ const HealthDashboard = () => {
       } else {
         setHasHealthService(false);
         setConnectionStatus("Restricted Access");
-        toast.warning("Connected, but data is restricted.");
+        toast.warning("Connected, but data is restricted.", {
+          description: "Check the Troubleshooting section to unrestrict access."
+        });
       }
 
       setConnectedDevice(device);
@@ -395,7 +397,15 @@ const HealthDashboard = () => {
             <CardHeader><CardTitle className="text-lg">Troubleshooting</CardTitle></CardHeader>
             <CardContent className="space-y-4 text-[10px] text-muted-foreground leading-relaxed">
               <div className="p-4 rounded-xl bg-warning/5 border border-warning/20">
-                <p className="font-bold text-warning uppercase mb-2">Connection Tips</p>
+                <p className="font-bold text-warning uppercase mb-2">Fixing "Restricted Access"</p>
+                <ul className="space-y-2 list-disc pl-3">
+                  <li><strong>On Watch:</strong> Go to Settings > Heart Rate > Enable "Broadcast Heart Rate".</li>
+                  <li><strong>On Phone App:</strong> Open your watch app (Zepp, Garmin, etc.) and enable "Discoverable Mode".</li>
+                  <li><strong>Privacy:</strong> Ensure no other fitness apps are currently using the watch's heart rate stream.</li>
+                </ul>
+              </div>
+              <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <p className="font-bold text-primary uppercase mb-2">Connection Tips</p>
                 <ul className="space-y-2 list-disc pl-3">
                   <li>Ensure watch is in Pairing Mode.</li>
                   <li>Check browser Bluetooth permissions.</li>

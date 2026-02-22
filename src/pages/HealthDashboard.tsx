@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { 
   Activity, Heart, Droplets, Scale, Plus, 
   TrendingUp, AlertCircle, Calendar, ChevronRight,
@@ -47,9 +47,12 @@ const HealthDashboard = () => {
   // Bluetooth State
   const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
   const [discoveredDevice, setDiscoveredDevice] = useState<BluetoothDevice | null>(null);
-  const [hrCharacteristic, setHrCharacteristic] = useState<BluetoothRemoteGATTCharacteristic | null>(null);
   const [liveHeartRate, setLiveHeartRate] = useState<number | null>(null);
   
+  // Refs for auto-sync logic
+  const lastSyncTimeRef = useRef<number>(0);
+  const SYNC_INTERVAL = 30000; // Sync every 30 seconds
+
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedType, setSelectedType] = useState<"bp" | "sugar" | "weight" | "heart">("bp");
   const [inputValue, setInputValue] = useState("");
@@ -80,6 +83,34 @@ const HealthDashboard = () => {
     return () => unsubscribe();
   }, [user]);
 
+  // Automatic Sync Logic
+  const autoSyncReading = async (value: number) => {
+    const now = Date.now();
+    if (now - lastSyncTimeRef.current < SYNC_INTERVAL) return;
+    
+    if (!user) return;
+    
+    lastSyncTimeRef.current = now;
+    setIsSyncing(true);
+    
+    try {
+      await addDoc(collection(db, "health_readings"), {
+        userId: user.uid,
+        type: "heart",
+        value: value,
+        unit: "bpm",
+        timestamp: Timestamp.now(),
+        status: value > 100 ? "high" : value < 60 ? "low" : "normal",
+        source: "watch"
+      });
+      console.log("Auto-synced heart rate:", value);
+    } catch (error) {
+      console.error("Auto-sync failed:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Bluetooth Data Parser
   const handleCharacteristicValueChanged = (event: any) => {
     const value = event.target.value;
@@ -91,7 +122,9 @@ const HealthDashboard = () => {
     } else {
       heartRate = value.getUint8(1);
     }
+    
     setLiveHeartRate(heartRate);
+    autoSyncReading(heartRate);
   };
 
   const startDiscovery = async () => {
@@ -104,8 +137,6 @@ const HealthDashboard = () => {
     setDiscoveredDevice(null);
     
     try {
-      // Broadening the search to accept all devices
-      // This ensures the user sees a list of everything nearby
       const device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [
@@ -119,11 +150,10 @@ const HealthDashboard = () => {
       
       setDiscoveredDevice(device);
       toast.success("Device selected!", {
-        description: `Found ${device.name || 'Unknown Device'}. Click connect to attempt data sync.`
+        description: `Found ${device.name || 'Unknown Device'}. Click connect to start auto-sync.`
       });
     } catch (error: any) {
       console.error("Bluetooth Discovery Error:", error);
-      
       if (error.name === 'NotFoundError') {
         toast.info("Discovery cancelled.");
       } else {
@@ -140,25 +170,27 @@ const HealthDashboard = () => {
     setIsPairing(true);
     try {
       toast.info(`Connecting to ${device.name || 'Device'}...`);
-      const server = await device.gatt?.connect();
       
+      // Attempt connection with a timeout/retry logic
+      const server = await device.gatt?.connect();
+      if (!server) throw new Error("Could not establish GATT connection");
+
       // Try to find a supported health service
       let service;
       try {
-        service = await server?.getPrimaryService('heart_rate');
+        service = await server.getPrimaryService('heart_rate');
       } catch (e) {
-        console.log("Heart rate service not found, device might not support standard GATT HR.");
+        console.log("Heart rate service not found on this device.");
       }
 
       if (service) {
         const characteristic = await service.getCharacteristic('heart_rate_measurement');
         await characteristic.startNotifications();
         characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
-        setHrCharacteristic(characteristic);
-        toast.success("Live heart rate stream active!");
+        toast.success("Connected! Auto-syncing is now active.");
       } else {
-        toast.warning("Connected, but no standard health services found.", {
-          description: "This device may use a proprietary protocol not supported by web browsers."
+        toast.warning("Connected, but no standard health data found.", {
+          description: "The device is connected, but it doesn't use the standard heart rate protocol."
         });
       }
 
@@ -171,9 +203,11 @@ const HealthDashboard = () => {
         toast.error("Device disconnected");
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Connection Error:", error);
-      toast.error("Failed to connect to device.");
+      toast.error("Pairing Error", {
+        description: error.message || "Failed to connect. Ensure the device isn't connected to another app."
+      });
     } finally {
       setIsPairing(false);
     }
@@ -185,29 +219,7 @@ const HealthDashboard = () => {
     }
     setConnectedDevice(null);
     setLiveHeartRate(null);
-    setHrCharacteristic(null);
     setDiscoveredDevice(null);
-  };
-
-  const handleSyncWatch = async () => {
-    if (!user || !liveHeartRate) return;
-    setIsSyncing(true);
-    try {
-      await addDoc(collection(db, "health_readings"), {
-        userId: user.uid,
-        type: "heart",
-        value: liveHeartRate,
-        unit: "bpm",
-        timestamp: Timestamp.now(),
-        status: liveHeartRate > 100 ? "high" : liveHeartRate < 60 ? "low" : "normal",
-        source: "watch"
-      });
-      toast.success("Reading synced successfully.");
-    } catch (error) {
-      toast.error("Failed to sync.");
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   const handleAddReading = async () => {
@@ -284,10 +296,10 @@ const HealthDashboard = () => {
               </Button>
             ) : (
               <div className="flex items-center gap-2">
-                <Button variant="outline" className="gap-2" onClick={handleSyncWatch} disabled={isSyncing || !liveHeartRate}>
-                  {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Watch className="h-4 w-4" />}
-                  Sync Reading
-                </Button>
+                <Badge variant="outline" className="bg-success/5 text-success border-success/20 px-3 py-1.5 gap-2">
+                  <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                  Auto-sync Active
+                </Badge>
                 <Button variant="ghost" size="icon" onClick={handleDisconnect} className="text-destructive">
                   <X className="h-4 w-4" />
                 </Button>
@@ -363,12 +375,14 @@ const HealthDashboard = () => {
                   
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="text-xs font-bold text-muted-foreground uppercase">Connection Status</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase">Sync Status</p>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-bold tracking-tighter">Stable Connection</span>
+                        <span className="text-sm font-bold tracking-tighter">
+                          {isSyncing ? "Syncing to Cloud..." : "Auto-sync Active"}
+                        </span>
                       </div>
                     </div>
-                    <Signal className="h-10 w-10 text-primary" />
+                    {isSyncing ? <RefreshCw className="h-10 w-10 text-primary animate-spin" /> : <Signal className="h-10 w-10 text-primary" />}
                   </div>
                 </>
               ) : discoveredDevice ? (

@@ -19,9 +19,9 @@ export interface Medicine {
   category: string;
   description: string;
   usage: string;
-  price: number; // Base price
+  price: number;
   requiresPrescription: boolean;
-  prices?: MedicinePrice[]; // Comparison data
+  prices?: MedicinePrice[];
 }
 
 export const pharmacies: Pharmacy[] = [
@@ -40,8 +40,7 @@ export const medicines: Medicine[] = [
     prices: [
       { pharmacyId: "p1", price: 28, stock: 150, discount: 5 },
       { pharmacyId: "p2", price: 25, stock: 200, discount: 10 },
-      { pharmacyId: "p3", price: 32, stock: 50, discount: 0 },
-      { pharmacyId: "p4", price: 29, stock: 100, discount: 2 }
+      { pharmacyId: "p3", price: 32, stock: 50, discount: 0 }
     ]
   },
   { 
@@ -51,8 +50,17 @@ export const medicines: Medicine[] = [
     price: 45, requiresPrescription: false,
     prices: [
       { pharmacyId: "p1", price: 42, stock: 80, discount: 8 },
-      { pharmacyId: "p2", price: 40, stock: 120, discount: 12 },
-      { pharmacyId: "p3", price: 48, stock: 30, discount: 0 }
+      { pharmacyId: "p2", price: 40, stock: 120, discount: 12 }
+    ]
+  },
+  { 
+    id: "3", name: "Amoxicillin 500mg", category: "Infectious", 
+    description: "Antibiotic used to treat various bacterial infections", 
+    usage: "As prescribed by doctor", 
+    price: 150, requiresPrescription: true,
+    prices: [
+      { pharmacyId: "p1", price: 145, stock: 30, discount: 5 },
+      { pharmacyId: "p3", price: 155, stock: 20, discount: 0 }
     ]
   },
   { 
@@ -62,13 +70,22 @@ export const medicines: Medicine[] = [
     price: 120, requiresPrescription: true,
     prices: [
       { pharmacyId: "p1", price: 115, stock: 40, discount: 5 },
-      { pharmacyId: "p2", price: 110, stock: 60, discount: 15 },
-      { pharmacyId: "p4", price: 118, stock: 25, discount: 0 }
+      { pharmacyId: "p2", price: 110, stock: 60, discount: 15 }
     ]
   },
+  { 
+    id: "5", name: "Atorvastatin 10mg", category: "Chronic Diseases", 
+    description: "Used to lower cholesterol and reduce risk of heart disease", 
+    usage: "1 tablet daily at night", 
+    price: 180, requiresPrescription: true,
+    prices: [
+      { pharmacyId: "p1", price: 175, stock: 50, discount: 5 },
+      { pharmacyId: "p4", price: 170, stock: 45, discount: 10 }
+    ]
+  }
 ];
 
-export const medicineCategories = ["All", "Fever", "Cold & Cough", "Skin Diseases", "Chronic Diseases"];
+export const medicineCategories = ["All", "Fever", "Cold & Cough", "Skin Diseases", "Chronic Diseases", "Infectious"];
 
 export interface Disease {
   id: string;
@@ -81,15 +98,38 @@ export interface Disease {
   category: string;
 }
 
-// Sorted from Newest (ID 3) to Oldest (ID 1)
 export const diseases: Disease[] = [
+  {
+    id: "6", name: "Malaria", category: "Infectious",
+    description: "A disease caused by a plasmodium parasite, transmitted by the bite of infected mosquitoes.",
+    causes: ["Anopheles mosquito bite", "Plasmodium parasite", "Contaminated blood transfusion"],
+    symptoms: ["Chills", "Fatigue", "Fever", "Night sweats", "Shivering"],
+    cures: ["Antimalarial treatment", "Fluid replacement", "Rest"],
+    medicines: ["Chloroquine", "Artemether", "Lumefantrine"],
+  },
+  {
+    id: "5", name: "Diabetes Mellitus", category: "Chronic",
+    description: "A group of diseases that result in too much sugar in the blood (high blood glucose).",
+    causes: ["Insulin resistance", "Genetics", "Obesity", "Lack of exercise"],
+    symptoms: ["Increased thirst", "Frequent urination", "Hunger", "Fatigue", "Blurred vision"],
+    cures: ["Dietary changes", "Physical activity", "Blood sugar monitoring"],
+    medicines: ["Metformin", "Insulin", "Glipizide"],
+  },
+  {
+    id: "4", name: "Asthma", category: "Respiratory",
+    description: "A condition in which a person's airways become inflamed, narrow and swell, and produce extra mucus.",
+    causes: ["Allergens (pollen, dust)", "Air pollution", "Respiratory infections", "Cold air"],
+    symptoms: ["Difficulty breathing", "Chest pain", "Cough", "Wheezing"],
+    cures: ["Avoiding triggers", "Breathing exercises", "Regular checkups"],
+    medicines: ["Albuterol", "Fluticasone", "Montelukast"],
+  },
   {
     id: "3", name: "Dengue Fever", category: "Infectious",
     description: "A mosquito-borne viral disease occurring in tropical and subtropical areas.",
     causes: ["Aedes mosquito bite", "Dengue virus (DENV)", "Stagnant water near living areas"],
     symptoms: ["High fever", "Severe headache", "Pain behind eyes", "Joint and muscle pain", "Skin rash"],
     cures: ["Hydration", "Complete bed rest", "Monitoring platelet count"],
-    medicines: ["Paracetamol (Avoid Aspirin/Ibuprofen)", "Electrolyte solutions"],
+    medicines: ["Paracetamol", "Electrolyte solutions"],
   },
   {
     id: "2", name: "Hypertension", category: "Chronic",
@@ -102,7 +142,7 @@ export const diseases: Disease[] = [
   {
     id: "1", name: "Common Cold", category: "Respiratory",
     description: "A viral infection of the upper respiratory tract affecting the nose and throat.",
-    causes: ["Rhinovirus", "Coronavirus (common cold type)", "Close contact with infected person"],
+    causes: ["Rhinovirus", "Coronavirus", "Close contact with infected person"],
     symptoms: ["Runny or stuffy nose", "Sore throat", "Cough", "Sneezing", "Low-grade fever"],
     cures: ["Rest and hydration", "Warm fluids", "Steam inhalation"],
     medicines: ["Paracetamol", "Cetirizine", "Vitamin C"],
@@ -125,6 +165,7 @@ export interface Doctor {
 export const doctors: Doctor[] = [
   { id: "1", name: "Dr. Sarah Johnson", specialty: "General Physician", hospital: "City Medical Center", rating: 4.8, experience: 12, avatar: "SJ", photoUrl: "https://images.unsplash.com/photo-1559839734-2b71f1536780?auto=format&fit=crop&q=80&w=200&h=200", homeVisit: true, fee: 500 },
   { id: "2", name: "Dr. Rajesh Kumar", specialty: "Cardiologist", hospital: "Heart Care Hospital", rating: 4.9, experience: 18, avatar: "RK", photoUrl: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200", homeVisit: false, fee: 1200 },
+  { id: "3", name: "Dr. Anita Desai", specialty: "Pediatrician", hospital: "City Medical Center", rating: 4.7, experience: 10, avatar: "AD", photoUrl: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200&h=200", homeVisit: true, fee: 600 },
 ];
 
 export interface Hospital {
@@ -138,6 +179,7 @@ export interface Hospital {
 
 export const hospitals: Hospital[] = [
   { id: "1", name: "City Medical Center", location: "123 Main Street, Downtown", specialties: ["General Medicine", "Cardiology", "Neurology", "Orthopedics"], rating: 4.7, image: "🏥" },
+  { id: "2", name: "Heart Care Hospital", location: "456 Cardiac Lane, Uptown", specialties: ["Cardiology", "Vascular Surgery"], rating: 4.9, image: "❤️" },
 ];
 
 export interface TimeSlot {
@@ -149,5 +191,8 @@ export interface TimeSlot {
 export const timeSlots: TimeSlot[] = [
   { id: "1", time: "09:00 AM", available: true },
   { id: "2", time: "09:30 AM", available: true },
-  { id: "3", time: "10:00 AM", available: false },
+  { id: "3", time: "10:00 AM", available: true },
+  { id: "4", time: "10:30 AM", available: true },
+  { id: "5", time: "11:00 AM", available: true },
+  { id: "6", time: "11:30 AM", available: true },
 ];

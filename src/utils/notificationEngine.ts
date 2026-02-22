@@ -8,7 +8,9 @@ export type NotificationType =
   | "EMERGENCY_ALERT"
   | "DOCTOR_EN_ROUTE"
   | "TELECONSULT_START"
-  | "PRESCRIPTION_READY";
+  | "PRESCRIPTION_READY"
+  | "HEALTH_ALERT_HIGH"
+  | "HEALTH_ALERT_LOW";
 
 interface MessageData {
   name?: string;
@@ -17,6 +19,8 @@ interface MessageData {
   doctor?: string;
   medicine?: string;
   amount?: string;
+  metric?: string;
+  value?: string;
 }
 
 export const generateNotificationMessage = (type: NotificationType, data: MessageData) => {
@@ -80,6 +84,18 @@ export const generateNotificationMessage = (type: NotificationType, data: Messag
         title: "E-Prescription Ready 📄",
         body: `Your prescription from ${data.doctor || "the doctor"} is now available in your profile.`,
         sms: `WellCare: Your e-prescription is ready. You can now order medicines directly from the app.`,
+      };
+    case "HEALTH_ALERT_HIGH":
+      return {
+        title: "Health Alert: High Reading ⚠️",
+        body: `Your ${data.metric} reading of ${data.value} is above the normal range. Please consult a doctor if you feel unwell.`,
+        sms: `WellCare Alert: High ${data.metric} detected (${data.value}). Please monitor your symptoms.`,
+      };
+    case "HEALTH_ALERT_LOW":
+      return {
+        title: "Health Alert: Low Reading ⚠️",
+        body: `Your ${data.metric} reading of ${data.value} is below the normal range. Please consult a doctor if you feel unwell.`,
+        sms: `WellCare Alert: Low ${data.metric} detected (${data.value}). Please monitor your symptoms.`,
       };
     default:
       return {

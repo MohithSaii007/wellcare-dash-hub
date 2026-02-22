@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video } from "lucide-react";
+import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import NotificationCenter from "./NotificationCenter";
@@ -15,6 +15,7 @@ import {
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: Home },
+  { path: "/health-dashboard", label: "Health Vitals", icon: Activity },
   { path: "/ai-assistant", label: "AI Assistant", icon: Bot },
   { path: "/teleconsultation", label: "Teleconsult", icon: Video },
   { path: "/search", label: "Disease Search", icon: Search },

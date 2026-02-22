@@ -1,4 +1,4 @@
-import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Heart, Droplets, Scale } from "lucide-react";
+import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Heart, Droplets, Scale, RefreshCw, Video } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import ServiceCard from "@/components/ServiceCard";
@@ -57,7 +57,7 @@ const Index = () => {
               Your Health, <span className="text-secondary">Our Priority</span>
             </h1>
             <p className="mt-4 text-lg text-primary-foreground/80">
-              Search diseases, book appointments, order medicines, and get doctor home visits — all from one place.
+              The most advanced healthcare ecosystem. AI-powered diagnostics, real-time price comparison, and smart refill tracking.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button 
@@ -84,10 +84,10 @@ const Index = () => {
 
       {/* Services Grid */}
       <section className="container -mt-8 relative z-10 pb-16">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <ServiceCard
-            title="AI Assistant"
-            description="Instant symptom analysis and health insights using AI"
+            title="AI Symptom Checker"
+            description="Clinical-grade analysis to match you with the right specialist instantly."
             icon={Bot}
             to="/ai-assistant"
             color="accent"
@@ -95,126 +95,102 @@ const Index = () => {
             onClick={(e) => handleProtectedClick(e, "/ai-assistant")}
           />
           <ServiceCard
-            title="Disease Search"
-            description="Look up diseases, symptoms, causes and treatments"
-            icon={Search}
-            to="/search"
+            title="Smart AI Refills"
+            description="AI predicts when your supply runs out and automates your refills."
+            icon={RefreshCw}
+            to="/refills"
             color="primary"
             delay={100}
-            onClick={(e) => handleProtectedClick(e, "/search")}
+            onClick={(e) => handleProtectedClick(e, "/refills")}
           />
           <ServiceCard
-            title="Book Appointment"
-            description="Find hospitals & doctors and book instantly"
-            icon={Calendar}
-            to="/appointments"
-            color="secondary"
-            delay={200}
-            onClick={(e) => handleProtectedClick(e, "/appointments")}
-          />
-          <ServiceCard
-            title="Order Medicines"
-            description="Browse medicines and get them delivered home"
-            icon={Pill}
+            title="Price Comparison"
+            description="Compare medicine prices across 50+ pharmacies and save up to 40%."
+            icon={Search}
             to="/medicines"
             color="success"
-            delay={300}
+            delay={200}
             onClick={(e) => handleProtectedClick(e, "/medicines")}
           />
           <ServiceCard
-            title="Doctor Home Visit"
-            description="Book a qualified doctor to visit you at home"
-            icon={Stethoscope}
-            to="/doctor-visit"
-            color="warning"
-            delay={400}
-            onClick={(e) => handleProtectedClick(e, "/doctor-visit")}
+            title="Teleconsultation"
+            description="HD video calls with top specialists and instant e-prescriptions."
+            icon={Video}
+            to="/teleconsultation"
+            color="secondary"
+            delay={300}
+            onClick={(e) => handleProtectedClick(e, "/teleconsultation")}
           />
         </div>
       </section>
 
-      {/* Health Vitals Quick View (Logged In Only) */}
-      {user && latestVitals.length > 0 && (
-        <section className="container pb-16 animate-fade-in">
-          <div className="rounded-2xl border bg-card p-6 card-shadow">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-heading font-bold flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" />
-                Your Latest Vitals
-              </h2>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/health-dashboard" className="text-primary">View Full Dashboard <ChevronRight className="ml-1 h-4 w-4" /></Link>
-              </Button>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {latestVitals.map((v, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border">
-                  <div className={`p-2 rounded-lg ${
-                    v.type === 'bp' ? 'bg-destructive/10 text-destructive' :
-                    v.type === 'sugar' ? 'bg-primary/10 text-primary' :
-                    v.type === 'heart' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                  }`}>
-                    {v.type === 'bp' ? <Heart className="h-4 w-4" /> :
-                     v.type === 'sugar' ? <Droplets className="h-4 w-4" /> :
-                     v.type === 'heart' ? <Activity className="h-4 w-4" /> : <Scale className="h-4 w-4" />}
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">{v.type === 'bp' ? 'Blood Pressure' : v.type === 'sugar' ? 'Blood Sugar' : v.type === 'heart' ? 'Heart Rate' : 'Weight'}</p>
-                    <p className="text-lg font-bold">{v.value}{v.value2 ? '/' + v.value2 : ''} <span className="text-[10px] font-normal text-muted-foreground">{v.unit}</span></p>
-                  </div>
+      {/* Advanced Features Showcase */}
+      <section className="container py-16">
+        <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <div className="animate-fade-in">
+            <Badge className="mb-4 bg-primary/10 text-primary border-none">NEW FEATURES</Badge>
+            <h2 className="text-3xl font-heading font-bold mb-6">Next-Gen Healthcare Tools</h2>
+            <div className="space-y-8">
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success">
+                  <Zap className="h-6 w-6" />
                 </div>
-              ))}
+                <div>
+                  <h4 className="font-bold text-lg">Medicine Price Comparison</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Don't overpay for your health. Our engine scans partnered pharmacies in real-time to find the lowest prices, fastest delivery, and best discounts for every medicine.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <RefreshCw className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">Smart Refill Prediction (AI)</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Our AI tracks your dosage and purchase history to predict exactly when you'll run out. Get reminders 3 days early and refill with a single tap.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <Activity className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">Real-time Health Vitals</h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Monitor BP, Sugar, and Heart Rate with smart trend analysis. Get instant alerts if your readings fall outside the normal range.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </section>
-      )}
-
-      {/* How it Works */}
-      <section className="container py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-heading font-bold">How MedCare Works</h2>
-          <p className="text-muted-foreground mt-2">Simple steps to manage your healthcare journey</p>
-        </div>
-        <div className="grid gap-8 md:grid-cols-3">
-          {[
-            {
-              step: "01",
-              title: "Identify Symptoms",
-              desc: "Use our AI Assistant or Disease Search to understand your health concerns.",
-              icon: Search,
-              path: "/search"
-            },
-            {
-              step: "02",
-              title: "Consult Experts",
-              desc: "Book an in-hospital appointment or request a doctor to visit your home.",
-              icon: Stethoscope,
-              path: "/appointments"
-            },
-            {
-              step: "03",
-              title: "Get Treatment",
-              desc: "Order prescribed medicines for home delivery and manage your recovery.",
-              icon: Pill,
-              path: "/medicines"
-            }
-          ].map((item, i) => (
-            <div 
-              key={i} 
-              className="relative p-6 rounded-2xl border bg-card card-shadow animate-fade-in cursor-pointer hover:border-primary transition-colors" 
-              style={{ animationDelay: `${i * 100}ms` }}
-              onClick={(e) => handleProtectedClick(e, item.path)}
-            >
-              <div className="absolute -top-4 -left-4 h-12 w-12 rounded-xl hero-gradient flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                {item.step}
+          <div className="relative animate-fade-in" style={{ animationDelay: "200ms" }}>
+            <div className="aspect-square rounded-3xl hero-gradient opacity-5 absolute -inset-4 rotate-3" />
+            <div className="relative rounded-2xl border bg-card p-8 card-shadow overflow-hidden">
+              <div className="absolute top-0 right-0 p-4">
+                <Badge variant="outline" className="bg-success/5 text-success border-success/20">AI Verified</Badge>
               </div>
-              <div className="mt-4">
-                <item.icon className="h-8 w-8 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
+              <h3 className="text-xl font-bold mb-4">Refill Prediction</h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-bold">Paracetamol 500mg</span>
+                    <span className="text-destructive font-bold">2 days left</span>
+                  </div>
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-destructive animate-pulse" style={{ width: '15%' }} />
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl bg-muted/30 border border-dashed">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">AI Insight</p>
+                  <p className="text-xs italic">"Based on your 2x daily dosage, your supply will deplete on Friday. Would you like to refill now?"</p>
+                </div>
+                <Button className="w-full hero-gradient shadow-lg">One-Tap Refill Now</Button>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       </section>
 

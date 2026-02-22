@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { 
   Activity, Heart, Droplets, Scale, Plus, 
   TrendingUp, AlertCircle, Calendar, ChevronRight,
-  Info, Bell, Download, Share2
+  Info, Bell, Download, Share2, Trash2, Loader2
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
 } from "recharts";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, orderBy, onSnapshot, Timestamp, deleteDoc, doc } from "firebase/firestore";
 import { toast } from "sonner";
 import { generateNotificationMessage } from "@/utils/notificationEngine";
 
@@ -38,6 +38,7 @@ const HealthDashboard = () => {
   const { user } = useAuth();
   const [readings, setReadings] = useState<HealthReading[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedType, setSelectedType] = useState<"bp" | "sugar" | "weight" | "heart">("bp");
   const [inputValue, setInputValue] = useState("");
@@ -48,7 +49,7 @@ const HealthDashboard = () => {
     bp: { high: 140, low: 90, high2: 90, low2: 60 },
     sugar: { high: 140, low: 70 },
     heart: { high: 100, low: 60 },
-    weight: { high: 100, low: 40 } // Example
+    weight: { high: 100, low: 40 }
   };
 
   useEffect(() => {
@@ -66,6 +67,10 @@ const HealthDashboard = () => {
         ...doc.data()
       })) as HealthReading[];
       setReadings(data);
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore error:", error);
+      toast.error("Failed to sync health data.");
       setLoading(false);
     });
 
@@ -87,6 +92,7 @@ const HealthDashboard = () => {
   const handleAddReading = async () => {
     if (!user || !inputValue) return;
 
+    setSaving(true);
     const val = parseFloat(inputValue);
     const val2 = inputValue2 ? parseFloat(inputValue2) : undefined;
     const status = checkStatus(selectedType, val, val2);
@@ -112,12 +118,24 @@ const HealthDashboard = () => {
         }));
       }
 
-      toast.success("Reading added successfully");
+      toast.success("Reading saved successfully");
       setShowAddDialog(false);
       setInputValue("");
       setInputValue2("");
     } catch (error) {
-      toast.error("Failed to add reading");
+      toast.error("Failed to save reading. Please try again.");
+      console.error(error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteReading = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "health_readings", id));
+      toast.success("Reading deleted");
+    } catch (error) {
+      toast.error("Failed to delete reading");
     }
   };
 
@@ -137,6 +155,16 @@ const HealthDashboard = () => {
     const types: ("bp" | "sugar" | "weight" | "heart")[] = ["bp", "sugar", "weight", "heart"];
     return types.map(t => readings.find(r => r.type === t));
   }, [readings]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -212,8 +240,11 @@ const HealthDashboard = () => {
                   )}
                 </div>
                 <DialogFooter>
-                  <Button variant="ghost" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-                  <Button className="hero-gradient" onClick={handleAddReading}>Save Reading</Button>
+                  <Button variant="ghost" onClick={() => setShowAddDialog(false)} disabled={saving}>Cancel</Button>
+                  <Button className="hero-gradient" onClick={handleAddReading} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Save Reading
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -348,7 +379,7 @@ const HealthDashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {readings.slice(0, 10).map((r) => (
-                  <div key={r.id} className="flex items-center justify-between p-3 rounded-xl border bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <div key={r.id} className="group flex items-center justify-between p-3 rounded-xl border bg-muted/20 hover:bg-muted/40 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${
                         r.type === 'bp' ? 'bg-destructive/10 text-destructive' :
@@ -368,9 +399,19 @@ const HealthDashboard = () => {
                         </p>
                       </div>
                     </div>
-                    <Badge variant={r.status === 'normal' ? 'outline' : 'destructive'} className="text-[8px] px-1.5">
-                      {r.status.toUpperCase()}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={r.status === 'normal' ? 'outline' : 'destructive'} className="text-[8px] px-1.5">
+                        {r.status.toUpperCase()}
+                      </Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteReading(r.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 {readings.length === 0 && (
@@ -406,7 +447,7 @@ const HealthDashboard = () => {
                   <AlertCircle className="h-4 w-4 text-warning" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Your <strong>Blood Sugar</strong> showed a slight spike yesterday. Consider monitoring your carbohydrate intake.
+                  Your <strong>Blood Sugar</strong> showed a slight spike recently. Consider monitoring your carbohydrate intake.
                 </p>
               </div>
             </CardContent>

@@ -1,4 +1,4 @@
-import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight } from "lucide-react";
+import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Heart, Droplets, Scale } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import ServiceCard from "@/components/ServiceCard";
@@ -6,10 +6,32 @@ import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-medical.jpg";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/firebase";
+import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
 
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [latestVitals, setLatestVitals] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(
+      collection(db, "health_readings"),
+      where("userId", "==", user.uid),
+      orderBy("timestamp", "desc"),
+      limit(4)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => doc.data());
+      setLatestVitals(data);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const handleProtectedClick = (e: React.MouseEvent, path: string) => {
     if (!user) {
@@ -110,6 +132,42 @@ const Index = () => {
           />
         </div>
       </section>
+
+      {/* Health Vitals Quick View (Logged In Only) */}
+      {user && latestVitals.length > 0 && (
+        <section className="container pb-16 animate-fade-in">
+          <div className="rounded-2xl border bg-card p-6 card-shadow">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-heading font-bold flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Your Latest Vitals
+              </h2>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/health-dashboard" className="text-primary">View Full Dashboard <ChevronRight className="ml-1 h-4 w-4" /></Link>
+              </Button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {latestVitals.map((v, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border">
+                  <div className={`p-2 rounded-lg ${
+                    v.type === 'bp' ? 'bg-destructive/10 text-destructive' :
+                    v.type === 'sugar' ? 'bg-primary/10 text-primary' :
+                    v.type === 'heart' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                  }`}>
+                    {v.type === 'bp' ? <Heart className="h-4 w-4" /> :
+                     v.type === 'sugar' ? <Droplets className="h-4 w-4" /> :
+                     v.type === 'heart' ? <Activity className="h-4 w-4" /> : <Scale className="h-4 w-4" />}
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">{v.type === 'bp' ? 'Blood Pressure' : v.type === 'sugar' ? 'Blood Sugar' : v.type === 'heart' ? 'Heart Rate' : 'Weight'}</p>
+                    <p className="text-lg font-bold">{v.value}{v.value2 ? '/' + v.value2 : ''} <span className="text-[10px] font-normal text-muted-foreground">{v.unit}</span></p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How it Works */}
       <section className="container py-16">

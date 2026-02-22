@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { 
   Activity, Heart, Droplets, Scale, Plus, 
   TrendingUp, AlertCircle, Calendar, ChevronRight,
-  Info, Bell, Download, Share2, Trash2, Loader2
+  Info, Bell, Download, Share2, Trash2, Loader2,
+  ArrowUpRight, ArrowDownRight, Minus
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -149,6 +150,27 @@ const HealthDashboard = () => {
         value: r.value,
         value2: r.value2
       }));
+  }, [readings, selectedType]);
+
+  const stats = useMemo(() => {
+    const filtered = readings.filter(r => r.type === selectedType);
+    if (filtered.length === 0) return null;
+
+    const values = filtered.map(r => r.value);
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    
+    // Trend calculation (comparing latest to previous)
+    let trend: "up" | "down" | "stable" = "stable";
+    if (filtered.length >= 2) {
+      const latest = filtered[0].value;
+      const previous = filtered[1].value;
+      if (latest > previous) trend = "up";
+      else if (latest < previous) trend = "down";
+    }
+
+    return { avg: avg.toFixed(1), max, min, trend };
   }, [readings, selectedType]);
 
   const latestReadings = useMemo(() => {
@@ -310,6 +332,26 @@ const HealthDashboard = () => {
               </Tabs>
             </CardHeader>
             <CardContent>
+              {stats && (
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="rounded-xl bg-muted/30 p-3 border">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Average</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-bold">{stats.avg}</p>
+                      {stats.trend === "up" ? <ArrowUpRight className="h-4 w-4 text-destructive" /> : stats.trend === "down" ? <ArrowDownRight className="h-4 w-4 text-success" /> : <Minus className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-muted/30 p-3 border">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Highest</p>
+                    <p className="text-lg font-bold">{stats.max}</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/30 p-3 border">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Lowest</p>
+                    <p className="text-lg font-bold">{stats.min}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="h-[300px] w-full mt-4">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">

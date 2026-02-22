@@ -48,6 +48,7 @@ const HealthDashboard = () => {
   const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
   const [discoveredDevice, setDiscoveredDevice] = useState<BluetoothDevice | null>(null);
   const [liveHeartRate, setLiveHeartRate] = useState<number | null>(null);
+  const [hasHealthService, setHasHealthService] = useState<boolean>(false);
   
   // Refs for auto-sync logic
   const lastSyncTimeRef = useRef<number>(0);
@@ -103,7 +104,6 @@ const HealthDashboard = () => {
         status: value > 100 ? "high" : value < 60 ? "low" : "normal",
         source: "watch"
       });
-      console.log("Auto-synced heart rate:", value);
     } catch (error) {
       console.error("Auto-sync failed:", error);
     } finally {
@@ -144,13 +144,14 @@ const HealthDashboard = () => {
           'battery_service', 
           'device_information', 
           'blood_pressure', 
-          'glucose'
+          'glucose',
+          '0000180d-0000-1000-8000-00805f9b34fb' // Standard HR UUID
         ]
       });
       
       setDiscoveredDevice(device);
-      toast.success("Device selected!", {
-        description: `Found ${device.name || 'Unknown Device'}. Click connect to start auto-sync.`
+      toast.success("Device found!", {
+        description: `Identified ${device.name || 'Smart Wearable'}. Click connect to verify health services.`
       });
     } catch (error: any) {
       console.error("Bluetooth Discovery Error:", error);
@@ -168,29 +169,33 @@ const HealthDashboard = () => {
 
   const connectToDevice = async (device: BluetoothDevice) => {
     setIsPairing(true);
+    setHasHealthService(false);
     try {
-      toast.info(`Connecting to ${device.name || 'Device'}...`);
+      toast.info(`Connecting to ${device.name || 'Wearable'}...`);
       
-      // Attempt connection with a timeout/retry logic
       const server = await device.gatt?.connect();
       if (!server) throw new Error("Could not establish GATT connection");
 
       // Try to find a supported health service
       let service;
       try {
+        // Try standard heart rate first
         service = await server.getPrimaryService('heart_rate');
       } catch (e) {
-        console.log("Heart rate service not found on this device.");
+        console.log("Standard HR service not found, checking for generic health data...");
       }
 
       if (service) {
         const characteristic = await service.getCharacteristic('heart_rate_measurement');
         await characteristic.startNotifications();
         characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
-        toast.success("Connected! Auto-syncing is now active.");
+        setHasHealthService(true);
+        toast.success("Connected! Live heart rate stream active.");
       } else {
-        toast.warning("Connected, but no standard health data found.", {
-          description: "The device is connected, but it doesn't use the standard heart rate protocol."
+        // Fallback: Check if it's at least a connected device we can use for manual triggers
+        setHasHealthService(false);
+        toast.warning("Connected, but health data is restricted.", {
+          description: "Your watch is connected, but it's not sharing heart rate data with the browser. Check your watch settings for 'Broadcast Heart Rate'."
         });
       }
 
@@ -200,6 +205,7 @@ const HealthDashboard = () => {
       device.addEventListener('gattserverdisconnected', () => {
         setConnectedDevice(null);
         setLiveHeartRate(null);
+        setHasHealthService(false);
         toast.error("Device disconnected");
       });
 
@@ -220,6 +226,7 @@ const HealthDashboard = () => {
     setConnectedDevice(null);
     setLiveHeartRate(null);
     setDiscoveredDevice(null);
+    setHasHealthService(false);
   };
 
   const handleAddReading = async () => {
@@ -296,9 +303,9 @@ const HealthDashboard = () => {
               </Button>
             ) : (
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-success/5 text-success border-success/20 px-3 py-1.5 gap-2">
-                  <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-                  Auto-sync Active
+                <Badge variant="outline" className={`${hasHealthService ? 'bg-success/5 text-success border-success/20' : 'bg-warning/5 text-warning border-warning/20'} px-3 py-1.5 gap-2`}>
+                  <div className={`h-2 w-2 rounded-full ${hasHealthService ? 'bg-success animate-pulse' : 'bg-warning'}`} />
+                  {hasHealthService ? 'Auto-sync Active' : 'Restricted Access'}
                 </Badge>
                 <Button variant="ghost" size="icon" onClick={handleDisconnect} className="text-destructive">
                   <X className="h-4 w-4" />
@@ -343,8 +350,8 @@ const HealthDashboard = () => {
           <Card className="lg:col-span-4 border-primary/20 bg-primary/5 card-shadow overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4">
               {connectedDevice ? (
-                <Badge className="bg-success text-white gap-1 animate-pulse">
-                  <div className="h-1.5 w-1.5 rounded-full bg-white" /> LIVE
+                <Badge className={`${hasHealthService ? 'bg-success' : 'bg-warning'} text-white gap-1 ${hasHealthService ? 'animate-pulse' : ''}`}>
+                  <div className="h-1.5 w-1.5 rounded-full bg-white" /> {hasHealthService ? 'LIVE' : 'PAIRED'}
                 </Badge>
               ) : isPairing ? (
                 <Badge variant="outline" className="text-primary animate-pulse">SCANNING</Badge>
@@ -357,7 +364,7 @@ const HealthDashboard = () => {
                 <Watch className="h-5 w-5 text-primary" />
                 Live Stream
               </CardTitle>
-              <CardDescription>{connectedDevice?.name || "No device connected"}</CardDescription>
+              <CardDescription>{connectedDevice?.name || (connectedDevice ? "Smart Wearable" : "No device connected")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
               {connectedDevice ? (
@@ -373,12 +380,21 @@ const HealthDashboard = () => {
                     <Heart className={`h-10 w-10 text-destructive ${liveHeartRate ? 'animate-pulse' : 'opacity-20'}`} />
                   </div>
                   
+                  {!hasHealthService && (
+                    <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                      <p className="text-[10px] text-warning font-bold uppercase mb-1">Compatibility Note</p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Your device is connected but not sharing heart rate data. Go to your watch settings and enable <strong>"Broadcast Heart Rate"</strong> or <strong>"Heart Rate Sharing"</strong>.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="text-xs font-bold text-muted-foreground uppercase">Sync Status</p>
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm font-bold tracking-tighter">
-                          {isSyncing ? "Syncing to Cloud..." : "Auto-sync Active"}
+                          {isSyncing ? "Syncing to Cloud..." : hasHealthService ? "Auto-sync Active" : "Waiting for data..."}
                         </span>
                       </div>
                     </div>
@@ -394,7 +410,7 @@ const HealthDashboard = () => {
                           <Bluetooth className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold">{discoveredDevice.name || 'Unknown Device'}</p>
+                          <p className="text-sm font-bold">{discoveredDevice.name || 'Smart Wearable'}</p>
                           <p className="text-[10px] text-muted-foreground">Ready to connect</p>
                         </div>
                       </div>

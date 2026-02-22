@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles } from "lucide-react";
+import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles, FileText, ShieldCheck } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,24 +10,42 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { medicines, medicineCategories, type Medicine } from "@/data/mockData";
 import { generateNotificationMessage } from "@/utils/notificationEngine";
+import PrescriptionUpload from "@/components/PrescriptionUpload";
 import { toast } from "sonner";
 
 const Medicines = () => {
   const [category, setCategory] = useState("All");
-  const [cart, setCart] = useState<{ medicine: Medicine; qty: number }[]>([]);
+  const [cart, setCart] = useState<{ medicine: Medicine; qty: number; prescriptionUrl?: string }[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [ordered, setOrdered] = useState(false);
   const [address, setAddress] = useState("");
   const [smartInput, setSmartInput] = useState("");
+  
+  // Prescription Flow State
+  const [pendingMedicine, setPendingMedicine] = useState<Medicine | null>(null);
+  const [showPrescriptionDialog, setShowPrescriptionDialog] = useState(false);
 
   const filtered = category === "All" ? medicines : medicines.filter((m) => m.category === category);
 
-  const addToCart = (m: Medicine, quantity: number = 1) => {
+  const addToCart = (m: Medicine, quantity: number = 1, prescriptionUrl?: string) => {
+    // Check if prescription is required but not provided
+    if (m.requiresPrescription && !prescriptionUrl) {
+      setPendingMedicine(m);
+      setShowPrescriptionDialog(true);
+      return;
+    }
+
     setCart((prev) => {
       const existing = prev.find((c) => c.medicine.id === m.id);
-      if (existing) return prev.map((c) => c.medicine.id === m.id ? { ...c, qty: c.qty + quantity } : c);
-      return [...prev, { medicine: m, qty: quantity }];
+      if (existing) return prev.map((c) => c.medicine.id === m.id ? { ...c, qty: c.qty + quantity, prescriptionUrl: prescriptionUrl || c.prescriptionUrl } : c);
+      return [...prev, { medicine: m, qty: quantity, prescriptionUrl }];
     });
+    
+    if (prescriptionUrl) {
+      setShowPrescriptionDialog(false);
+      setPendingMedicine(null);
+    }
+    
     toast.success(`Added ${quantity}x ${m.name} to cart`);
   };
 
@@ -49,12 +67,8 @@ const Medicines = () => {
       if (input.includes(m.name.toLowerCase())) {
         const qtyMatch = input.match(new RegExp(`(\\d+)\\s*${m.name.toLowerCase()}`)) || input.match(new RegExp(`${m.name.toLowerCase()}\\s*(\\d+)`));
         const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-        if (m.requiresPrescription) {
-          toast.error(`${m.name} requires a prescription.`);
-        } else {
-          addToCart(m, qty);
-          found = true;
-        }
+        addToCart(m, qty);
+        found = true;
       }
     });
     if (!found) toast.error("Could not identify medicine.");
@@ -66,7 +80,6 @@ const Medicines = () => {
       const orderId = Date.now().toString(36).toUpperCase();
       const msg = generateNotificationMessage("ORDER_CONFIRMED", { id: orderId });
       
-      // Dispatch global notification event
       window.dispatchEvent(new CustomEvent("wellcare-notification", { 
         detail: { ...msg, type: "ORDER_CONFIRMED" } 
       }));
@@ -119,20 +132,45 @@ const Medicines = () => {
               <div className="flex items-center gap-2 mb-3">
                 <Pill className="h-4 w-4 text-primary" />
                 <Badge variant={m.requiresPrescription ? "destructive" : "secondary"} className="text-[10px]">
-                  {m.requiresPrescription ? "Prescription" : "OTC"}
+                  {m.requiresPrescription ? "Prescription Required" : "OTC"}
                 </Badge>
               </div>
               <h3 className="font-heading font-semibold">{m.name}</h3>
               <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{m.description}</p>
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-lg font-bold">₹{m.price}</span>
-                <Button size="sm" onClick={() => addToCart(m)} disabled={m.requiresPrescription}>
-                  <ShoppingCart className="mr-1 h-3 w-3" /> Add
+                <Button 
+                  size="sm" 
+                  onClick={() => addToCart(m)}
+                  variant={m.requiresPrescription ? "outline" : "default"}
+                  className={m.requiresPrescription ? "border-destructive/50 text-destructive hover:bg-destructive/5" : ""}
+                >
+                  {m.requiresPrescription ? <FileText className="mr-1 h-3 w-3" /> : <ShoppingCart className="mr-1 h-3 w-3" />}
+                  {m.requiresPrescription ? "Upload Rx" : "Add"}
                 </Button>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Prescription Upload Dialog */}
+        <Dialog open={showPrescriptionDialog} onOpenChange={setShowPrescriptionDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Upload Prescription</DialogTitle>
+            </DialogHeader>
+            {pendingMedicine && (
+              <PrescriptionUpload 
+                medicineName={pendingMedicine.name}
+                onUploadComplete={(url) => addToCart(pendingMedicine, 1, url)}
+                onCancel={() => {
+                  setShowPrescriptionDialog(false);
+                  setPendingMedicine(null);
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showCart} onOpenChange={setShowCart}>
           <DialogContent className="max-w-md">
@@ -144,8 +182,15 @@ const Medicines = () => {
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                   {cart.map((c) => (
                     <div key={c.medicine.id} className="flex items-center justify-between rounded-lg border p-3">
-                      <div>
-                        <p className="text-sm font-semibold">{c.medicine.name}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold">{c.medicine.name}</p>
+                          {c.prescriptionUrl && (
+                            <Badge variant="outline" className="h-4 px-1 text-[8px] bg-success/5 text-success border-success/20">
+                              <ShieldCheck className="h-2 w-2 mr-0.5" /> Verified Rx
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">{c.qty} × ₹{c.medicine.price}</p>
                       </div>
                       <button onClick={() => removeFromCart(c.medicine.id)}><X className="h-4 w-4 text-muted-foreground" /></button>
@@ -171,7 +216,7 @@ const Medicines = () => {
         <Dialog open={ordered} onOpenChange={(o) => { setOrdered(o); if (!o) setCart([]); }}>
           <DialogContent>
             <DialogHeader><DialogTitle className="text-success flex items-center gap-2"><CheckCircle2 /> Order Placed!</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">Your order has been confirmed. Check your notifications for updates.</p>
+            <p className="text-sm text-muted-foreground">Your order has been confirmed. Our pharmacists will review your prescriptions before dispatch.</p>
             <Button className="w-full mt-4" onClick={() => setOrdered(false)}>Close</Button>
           </DialogContent>
         </Dialog>

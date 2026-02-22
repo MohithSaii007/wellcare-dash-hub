@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles, FileText, ShieldCheck, Search, ArrowRight, RefreshCw } from "lucide-react";
+import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles, FileText, ShieldCheck, Search, ArrowRight, RefreshCw, Loader2 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,15 +16,18 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 const Medicines = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [category, setCategory] = useState("All");
   const [cart, setCart] = useState<{ medicine: Medicine; qty: number; pharmacy?: Pharmacy; prescriptionUrl?: string; dosage?: number }[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [ordered, setOrdered] = useState(false);
   const [address, setAddress] = useState("");
   const [smartInput, setSmartInput] = useState("");
+  const [isOrdering, setIsOrdering] = useState(false);
   
   // Comparison Flow State
   const [comparingMedicine, setComparingMedicine] = useState<Medicine | null>(null);
@@ -79,25 +82,39 @@ const Medicines = () => {
   }, [cart]);
 
   const handleOrder = async () => {
-    if (address.trim() && cart.length > 0 && user) {
+    if (!user) {
+      toast.error("Please login to place an order", {
+        description: "You need an account to track your medicines and refills."
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!address.trim()) {
+      toast.error("Delivery address required", {
+        description: "Please enter your address to proceed with the order."
+      });
+      return;
+    }
+
+    if (cart.length === 0) return;
+
+    setIsOrdering(true);
+    try {
       const orderId = Date.now().toString(36).toUpperCase();
       
       // Save active prescriptions for AI refill tracking
-      try {
-        for (const item of cart) {
-          await addDoc(collection(db, "active_prescriptions"), {
-            userId: user.uid,
-            medicineId: item.medicine.id,
-            medicineName: item.medicine.name,
-            dosagePerDay: item.dosage || 1,
-            totalQuantity: item.qty * 10, // Assuming 10 tablets per pack
-            startDate: Timestamp.now(),
-            lastRefillDate: Timestamp.now(),
-            orderId
-          });
-        }
-      } catch (e) {
-        console.error("Error saving refill data:", e);
+      for (const item of cart) {
+        await addDoc(collection(db, "active_prescriptions"), {
+          userId: user.uid,
+          medicineId: item.medicine.id,
+          medicineName: item.medicine.name,
+          dosagePerDay: item.dosage || 1,
+          totalQuantity: item.qty * 10, // Assuming 10 tablets per pack
+          startDate: Timestamp.now(),
+          lastRefillDate: Timestamp.now(),
+          orderId
+        });
       }
 
       const msg = generateNotificationMessage("ORDER_CONFIRMED", { id: orderId });
@@ -107,6 +124,12 @@ const Medicines = () => {
 
       setOrdered(true);
       setShowCart(false);
+      toast.success("Order placed successfully!");
+    } catch (e) {
+      console.error("Error saving refill data:", e);
+      toast.error("Failed to place order. Please try again.");
+    } finally {
+      setIsOrdering(false);
     }
   };
 
@@ -118,8 +141,8 @@ const Medicines = () => {
             <h1 className="text-3xl font-heading font-bold">Order Medicines</h1>
             <p className="mt-1 text-muted-foreground">Compare prices across pharmacies and enable AI refill tracking.</p>
           </div>
-          <Button variant="outline" className="gap-2 border-primary/20 text-primary bg-primary/5" asChild>
-            <a href="/refills"><RefreshCw className="h-4 w-4" /> Manage AI Refills</a>
+          <Button variant="outline" className="gap-2 border-primary/20 text-primary bg-primary/5" onClick={() => navigate("/refills")}>
+            <RefreshCw className="h-4 w-4" /> Manage AI Refills
           </Button>
         </div>
 
@@ -285,7 +308,10 @@ const Medicines = () => {
                 <div className="space-y-3 mt-4">
                   <Label>Delivery Address</Label>
                   <Input placeholder="Enter address" value={address} onChange={(e) => setAddress(e.target.value)} />
-                  <Button className="w-full hero-gradient" onClick={handleOrder} disabled={!address.trim()}>Place Order</Button>
+                  <Button className="w-full hero-gradient" onClick={handleOrder} disabled={isOrdering}>
+                    {isOrdering ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
+                    Place Order
+                  </Button>
                 </div>
               </>
             )}

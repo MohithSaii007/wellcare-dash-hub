@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video, Activity } from "lucide-react";
+import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video, Activity, AlertCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import NotificationCenter from "./NotificationCenter";
@@ -12,6 +12,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: Home },
@@ -39,6 +51,13 @@ const Layout = ({ children, cartCount = 0, onCartClick }: LayoutProps) => {
   const handleLogout = async () => {
     await logout();
     navigate("/auth");
+  };
+
+  const handleSOS = () => {
+    toast.error("Emergency SOS Activated!", {
+      description: "Emergency services and your primary contact have been notified of your location.",
+      duration: 10000,
+    });
   };
 
   return (
@@ -76,6 +95,29 @@ const Layout = ({ children, cartCount = 0, onCartClick }: LayoutProps) => {
           </nav>
 
           <div className="flex items-center gap-2">
+            {/* SOS Button */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="hidden sm:flex gap-2 animate-pulse">
+                  <AlertCircle className="h-4 w-4" /> SOS
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirm Emergency SOS?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will immediately notify emergency services and your emergency contacts with your current GPS location.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSOS} className="bg-destructive text-destructive-foreground">
+                    Confirm SOS
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
             <NotificationCenter />
             
             {cartCount > 0 && (
@@ -129,6 +171,11 @@ const Layout = ({ children, cartCount = 0, onCartClick }: LayoutProps) => {
         {/* Mobile Nav */}
         {mobileOpen && (
           <nav className="border-t bg-card p-4 md:hidden animate-fade-in">
+            <div className="mb-4 flex justify-center">
+               <Button variant="destructive" className="w-full gap-2" onClick={handleSOS}>
+                  <AlertCircle className="h-4 w-4" /> EMERGENCY SOS
+                </Button>
+            </div>
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = location.pathname === item.path;

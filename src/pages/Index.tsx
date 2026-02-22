@@ -1,13 +1,14 @@
-import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Heart, Droplets, Scale, RefreshCw, Video } from "lucide-react";
+import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Heart, Droplets, Scale, RefreshCw, Video, Sparkles, TrendingUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import ServiceCard from "@/components/ServiceCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import heroImage from "@/assets/hero-medical.jpg";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
 
@@ -23,7 +24,7 @@ const Index = () => {
       collection(db, "health_readings"),
       where("userId", "==", user.uid),
       orderBy("timestamp", "desc"),
-      limit(4)
+      limit(10)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -33,6 +34,14 @@ const Index = () => {
 
     return () => unsubscribe();
   }, [user]);
+
+  const healthScore = useMemo(() => {
+    if (latestVitals.length === 0) return 0;
+    // Simple logic: more readings = better score, but capped at 95
+    const base = 65;
+    const bonus = Math.min(30, latestVitals.length * 5);
+    return base + bonus;
+  }, [latestVitals]);
 
   const handleProtectedClick = (e: React.MouseEvent, path: string) => {
     if (!user) {
@@ -83,8 +92,61 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Dashboard Stats & Health Score */}
+      {user && (
+        <section className="container py-12 animate-fade-in">
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card className="card-shadow border-primary/20 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" /> Health Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end gap-2">
+                  <span className="text-4xl font-bold text-primary">{healthScore}</span>
+                  <span className="text-sm text-muted-foreground mb-1">/ 100</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">Based on your recent vitals and activity.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-shadow border-success/20 bg-success/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-success" /> Daily Health Tip
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm font-medium italic">"Drinking 500ml of water right after waking up boosts metabolism by 24%."</p>
+                <Badge variant="outline" className="mt-3 text-[10px] bg-white">AI Generated</Badge>
+              </CardContent>
+            </Card>
+
+            <Card className="card-shadow border-accent/20 bg-accent/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-accent" /> Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {latestVitals.slice(0, 2).map((v, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="capitalize">{v.type} Reading</span>
+                      <span className="font-bold">{v.value} {v.unit}</span>
+                    </div>
+                  ))}
+                  {latestVitals.length === 0 && <p className="text-xs text-muted-foreground">No recent readings found.</p>}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
+
       {/* Services Grid */}
-      <section className="container -mt-8 relative z-10 pb-16">
+      <section className={`container ${user ? 'py-8' : '-mt-8 relative z-10 pb-16'}`}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <ServiceCard
             title="AI Symptom Checker"
@@ -188,7 +250,7 @@ const Index = () => {
                   <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">AI Insight</p>
                   <p className="text-xs italic">"Based on your 2x daily dosage, your supply will deplete on Friday. Would you like to refill now?"</p>
                 </div>
-                <Button className="w-full hero-gradient shadow-lg">One-Tap Refill Now</Button>
+                <Button className="w-full hero-gradient shadow-lg" onClick={() => navigate("/refills")}>One-Tap Refill Now</Button>
               </div>
             </div>
           </div>

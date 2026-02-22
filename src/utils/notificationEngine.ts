@@ -6,7 +6,9 @@ export type NotificationType =
   | "PAYMENT_SUCCESS" 
   | "MEDICINE_REMINDER" 
   | "EMERGENCY_ALERT"
-  | "DOCTOR_EN_ROUTE";
+  | "DOCTOR_EN_ROUTE"
+  | "TELECONSULT_START"
+  | "PRESCRIPTION_READY";
 
 interface MessageData {
   name?: string;
@@ -66,6 +68,18 @@ export const generateNotificationMessage = (type: NotificationType, data: Messag
         title: "Doctor is on the way! 🚗",
         body: `${data.doctor || "The doctor"} has started the journey to your location and should arrive shortly.`,
         sms: `WellCare: ${data.doctor} is en route to your address for the home visit.`,
+      };
+    case "TELECONSULT_START":
+      return {
+        title: "Consultation Starting 🎥",
+        body: `${data.doctor || "The doctor"} is waiting for you in the video room. Join now!`,
+        sms: `WellCare: Your video consultation with ${data.doctor} is starting now. Click to join.`,
+      };
+    case "PRESCRIPTION_READY":
+      return {
+        title: "E-Prescription Ready 📄",
+        body: `Your prescription from ${data.doctor || "the doctor"} is now available in your profile.`,
+        sms: `WellCare: Your e-prescription is ready. You can now order medicines directly from the app.`,
       };
     default:
       return {

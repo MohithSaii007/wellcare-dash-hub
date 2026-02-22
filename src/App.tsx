@@ -10,6 +10,8 @@ import Appointments from "./pages/Appointments";
 import Medicines from "./pages/Medicines";
 import DoctorVisit from "./pages/DoctorVisit";
 import AIAssistant from "./pages/AIAssistant";
+import Teleconsultation from "./pages/Teleconsultation";
+import VideoCall from "./pages/VideoCall";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/medicines" element={<Medicines />} />
             <Route path="/doctor-visit" element={<DoctorVisit />} />
             <Route path="/ai-assistant" element={<AIAssistant />} />
+            <Route path="/teleconsultation" element={<Teleconsultation />} />
+            <Route path="/video-call/:appointmentId" element={<VideoCall />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

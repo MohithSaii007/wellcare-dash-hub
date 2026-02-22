@@ -66,23 +66,32 @@ const HealthDashboard = () => {
       return;
     }
 
-    const q = query(
-      collection(db, "health_readings"),
-      where("userId", "==", user.uid),
-      orderBy("timestamp", "desc"),
-      limit(30)
-    );
+    try {
+      const q = query(
+        collection(db, "health_readings"),
+        where("userId", "==", user.uid),
+        orderBy("timestamp", "desc"),
+        limit(30)
+      );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as HealthReading[];
-      setReadings(data);
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as HealthReading[];
+        setReadings(data);
+        setLoading(false);
+      }, (error) => {
+        console.error("Firestore subscription error:", error);
+        toast.error("Database connection error. Please check your internet.");
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    } catch (error) {
+      console.error("Error setting up health readings query:", error);
       setLoading(false);
-    });
-
-    return () => unsubscribe();
+    }
   }, [user]);
 
   // Automatic Sync Logic
@@ -274,7 +283,8 @@ const HealthDashboard = () => {
       setInputValue("");
       setInputValue2("");
     } catch (error) {
-      toast.error("Failed to save");
+      console.error("Error adding reading:", error);
+      toast.error("Failed to save reading. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -295,17 +305,6 @@ const HealthDashboard = () => {
     const types: ("bp" | "sugar" | "weight" | "heart")[] = ["bp", "sugar", "weight", "heart"];
     return types.map(t => readings.find(r => r.type === t));
   }, [readings]);
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="flex h-[60vh] flex-col items-center justify-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground">Initializing health engine...</p>
-        </div>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
@@ -562,8 +561,7 @@ const HealthDashboard = () => {
                 )}
               </div>
             </CardContent>
-          </AreaChart>
-        </Card>
+          </Card>
 
           <Card className="card-shadow">
             <CardHeader><CardTitle className="text-lg">Troubleshooting</CardTitle></CardHeader>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles, FileText, ShieldCheck, Search, ArrowRight } from "lucide-react";
+import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles, FileText, ShieldCheck, Search, ArrowRight, RefreshCw } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -152,35 +152,48 @@ const Medicines = () => {
           ))}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((m) => (
-            <div key={m.id} className="rounded-xl border bg-card p-5 card-shadow transition-all hover:card-shadow-hover group">
-              <div className="flex items-center gap-2 mb-3">
-                <Pill className="h-4 w-4 text-primary" />
-                <Badge variant={m.requiresPrescription ? "destructive" : "secondary"} className="text-[10px]">
-                  {m.requiresPrescription ? "Prescription Required" : "OTC"}
-                </Badge>
-              </div>
-              <h3 className="font-heading font-semibold">{m.name}</h3>
-              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{m.description}</p>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <span className="text-lg font-bold">₹{m.price}</span>
-                  <p className="text-[9px] text-success font-bold">Compare & Save</p>
+        {filtered.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map((m) => (
+              <div key={m.id} className="rounded-xl border bg-card p-5 card-shadow transition-all hover:card-shadow-hover group">
+                <div className="flex items-center gap-2 mb-3">
+                  <Pill className="h-4 w-4 text-primary" />
+                  <Badge variant={m.requiresPrescription ? "destructive" : "secondary"} className="text-[10px]">
+                    {m.requiresPrescription ? "Prescription Required" : "OTC"}
+                  </Badge>
                 </div>
-                <Button 
-                  size="sm" 
-                  onClick={() => handleMedicineClick(m)}
-                  variant={m.requiresPrescription ? "outline" : "default"}
-                  className={m.requiresPrescription ? "border-destructive/50 text-destructive hover:bg-destructive/5" : "hero-gradient"}
-                >
-                  {m.requiresPrescription ? <FileText className="mr-1 h-3 w-3" /> : <Search className="mr-1 h-3 w-3" />}
-                  {m.requiresPrescription ? "Upload Rx" : "Compare"}
-                </Button>
+                <h3 className="font-heading font-semibold">{m.name}</h3>
+                <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{m.description}</p>
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-lg font-bold">₹{m.price}</span>
+                    <p className="text-[9px] text-success font-bold">Compare & Save</p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleMedicineClick(m)}
+                    variant={m.requiresPrescription ? "outline" : "default"}
+                    className={m.requiresPrescription ? "border-destructive/50 text-destructive hover:bg-destructive/5" : "hero-gradient"}
+                  >
+                    {m.requiresPrescription ? <FileText className="mr-1 h-3 w-3" /> : <Search className="mr-1 h-3 w-3" />}
+                    {m.requiresPrescription ? "Upload Rx" : "Compare"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-2xl bg-muted/20">
+            <Pill className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <h3 className="text-lg font-bold text-muted-foreground">No medicines found</h3>
+            <p className="text-sm text-muted-foreground max-w-xs mt-2">
+              We couldn't find any medicines in the "{category}" category. Try another filter.
+            </p>
+            <Button variant="link" className="mt-4 text-primary" onClick={() => setCategory("All")}>
+              View All Medicines
+            </Button>
+          </div>
+        )}
 
         {/* Price Comparison Dialog */}
         <Dialog open={showComparisonDialog} onOpenChange={setShowComparisonDialog}>

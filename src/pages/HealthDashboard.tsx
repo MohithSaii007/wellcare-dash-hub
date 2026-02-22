@@ -181,7 +181,7 @@ const HealthDashboard = () => {
         setHasHealthService(false);
         setConnectionStatus("Restricted Access");
         toast.warning("Connected, but data is restricted.", {
-          description: "Check the Troubleshooting section to unrestrict access."
+          description: "Check the Troubleshooting section for boAt Ultraprime instructions."
         });
       }
 
@@ -397,15 +397,15 @@ const HealthDashboard = () => {
             <CardHeader><CardTitle className="text-lg">Troubleshooting</CardTitle></CardHeader>
             <CardContent className="space-y-4 text-[10px] text-muted-foreground leading-relaxed">
               <div className="p-4 rounded-xl bg-warning/5 border border-warning/20">
-                <p className="font-bold text-warning uppercase mb-2">Fixing "Restricted Access"</p>
+                <p className="font-bold text-warning uppercase mb-2">boAt Ultraprime Fix</p>
                 <ul className="space-y-2 list-disc pl-3">
-                  <li><strong>On Watch:</strong> Go to Settings > Heart Rate > Enable "Broadcast Heart Rate".</li>
-                  <li><strong>On Phone App:</strong> Open your watch app (Zepp, Garmin, etc.) and enable "Discoverable Mode".</li>
-                  <li><strong>Privacy:</strong> Ensure no other fitness apps are currently using the watch's heart rate stream.</li>
+                  <li><strong>boAt Crest App:</strong> Go to Settings > Health Monitoring > Enable "Continuous Heart Rate".</li>
+                  <li><strong>Bluetooth:</strong> Unpair the watch from your phone's system Bluetooth settings (Forget Device) so the browser can take control.</li>
+                  <li><strong>Visibility:</strong> Ensure the watch is not currently connected to another fitness app like Strava.</li>
                 </ul>
               </div>
               <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                <p className="font-bold text-primary uppercase mb-2">Connection Tips</p>
+                <p className="font-bold text-primary uppercase mb-2">General Tips</p>
                 <ul className="space-y-2 list-disc pl-3">
                   <li>Ensure watch is in Pairing Mode.</li>
                   <li>Check browser Bluetooth permissions.</li>

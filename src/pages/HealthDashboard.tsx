@@ -37,7 +37,7 @@ interface HealthReading {
 }
 
 const HealthDashboard = () => {
-  const { user } = userAuth();
+  const { user } = useAuth();
   const [readings, setReadings] = useState<HealthReading[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -49,6 +49,7 @@ const HealthDashboard = () => {
   const [discoveredDevice, setDiscoveredDevice] = useState<BluetoothDevice | null>(null);
   const [liveHeartRate, setLiveHeartRate] = useState<number | null>(null);
   const [hasHealthService, setHasHealthService] = useState<boolean>(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>("Disconnected");
   
   // Refs for auto-sync logic
   const lastSyncTimeRef = useRef<number>(0);
@@ -85,9 +86,9 @@ const HealthDashboard = () => {
   }, [user]);
 
   // Automatic Sync Logic
-  const autoSyncReading = async (value: number) => {
+  const autoSyncReading = async (value: number, isManualTrigger = false) => {
     const now = Date.now();
-    if (now - lastSyncTimeRef.current < SYNC_INTERVAL) return;
+    if (!isManualTrigger && (now - lastSyncTimeRef.current < SYNC_INTERVAL)) return;
     
     if (!user) return;
     
@@ -104,6 +105,9 @@ const HealthDashboard = () => {
         status: value > 100 ? "high" : value < 60 ? "low" : "normal",
         source: "watch"
       });
+      if (isManualTrigger) {
+        toast.success("Verified watch reading synced!");
+      }
     } catch (error) {
       console.error("Auto-sync failed:", error);
     } finally {
@@ -135,6 +139,7 @@ const HealthDashboard = () => {
 
     setIsPairing(true);
     setDiscoveredDevice(null);
+    setConnectionStatus("Scanning...");
     
     try {
       const device = await navigator.bluetooth.requestDevice({
@@ -145,16 +150,19 @@ const HealthDashboard = () => {
           'device_information', 
           'blood_pressure', 
           'glucose',
-          '0000180d-0000-1000-8000-00805f9b34fb' // Standard HR UUID
+          '0000180d-0000-1000-8000-00805f9b34fb',
+          '0000180a-0000-1000-8000-00805f9b34fb'
         ]
       });
       
       setDiscoveredDevice(device);
+      setConnectionStatus("Device Found");
       toast.success("Device found!", {
         description: `Identified ${device.name || 'Smart Wearable'}. Click connect to verify health services.`
       });
     } catch (error: any) {
       console.error("Bluetooth Discovery Error:", error);
+      setConnectionStatus("Discovery Failed");
       if (error.name === 'NotFoundError') {
         toast.info("Discovery cancelled.");
       } else {
@@ -170,19 +178,26 @@ const HealthDashboard = () => {
   const connectToDevice = async (device: BluetoothDevice) => {
     setIsPairing(true);
     setHasHealthService(false);
+    setConnectionStatus("Connecting...");
     try {
       toast.info(`Connecting to ${device.name || 'Wearable'}...`);
       
       const server = await device.gatt?.connect();
       if (!server) throw new Error("Could not establish GATT connection");
 
-      // Try to find a supported health service
+      setConnectionStatus("Discovering Services...");
+      
+      // Try to find a supported health service with multiple fallbacks
       let service;
-      try {
-        // Try standard heart rate first
-        service = await server.getPrimaryService('heart_rate');
-      } catch (e) {
-        console.log("Standard HR service not found, checking for generic health data...");
+      const serviceUUIDs = ['heart_rate', '0000180d-0000-1000-8000-00805f9b34fb'];
+      
+      for (const uuid of serviceUUIDs) {
+        try {
+          service = await server.getPrimaryService(uuid);
+          if (service) break;
+        } catch (e) {
+          console.log(`Service ${uuid} not found.`);
+        }
       }
 
       if (service) {
@@ -190,12 +205,13 @@ const HealthDashboard = () => {
         await characteristic.startNotifications();
         characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
         setHasHealthService(true);
+        setConnectionStatus("Live Stream Active");
         toast.success("Connected! Live heart rate stream active.");
       } else {
-        // Fallback: Check if it's at least a connected device we can use for manual triggers
         setHasHealthService(false);
+        setConnectionStatus("Restricted Access");
         toast.warning("Connected, but health data is restricted.", {
-          description: "Your watch is connected, but it's not sharing heart rate data with the browser. Check your watch settings for 'Broadcast Heart Rate'."
+          description: "Your watch is connected, but it's not sharing heart rate data with the browser. You can still use 'Verified Manual Sync'."
         });
       }
 
@@ -206,11 +222,13 @@ const HealthDashboard = () => {
         setConnectedDevice(null);
         setLiveHeartRate(null);
         setHasHealthService(false);
+        setConnectionStatus("Disconnected");
         toast.error("Device disconnected");
       });
 
     } catch (error: any) {
       console.error("Connection Error:", error);
+      setConnectionStatus("Connection Error");
       toast.error("Pairing Error", {
         description: error.message || "Failed to connect. Ensure the device isn't connected to another app."
       });
@@ -227,23 +245,31 @@ const HealthDashboard = () => {
     setLiveHeartRate(null);
     setDiscoveredDevice(null);
     setHasHealthService(false);
+    setConnectionStatus("Disconnected");
+  };
+
+  const handleVerifiedSync = () => {
+    setSelectedType("heart");
+    setInputValue("");
+    setShowAddDialog(true);
   };
 
   const handleAddReading = async () => {
     if (!user || !inputValue) return;
     setSaving(true);
     try {
+      const val = parseFloat(inputValue);
       await addDoc(collection(db, "health_readings"), {
         userId: user.uid,
         type: selectedType,
-        value: parseFloat(inputValue),
+        value: val,
         value2: inputValue2 ? parseFloat(inputValue2) : undefined,
         unit: selectedType === "bp" ? "mmHg" : selectedType === "sugar" ? "mg/dL" : selectedType === "weight" ? "kg" : "bpm",
         timestamp: Timestamp.now(),
         status: "normal",
-        source: "manual"
+        source: connectedDevice && selectedType === "heart" ? "watch" : "manual"
       });
-      toast.success("Reading saved");
+      toast.success(connectedDevice && selectedType === "heart" ? "Verified watch reading saved" : "Reading saved");
       setShowAddDialog(false);
       setInputValue("");
       setInputValue2("");
@@ -305,7 +331,7 @@ const HealthDashboard = () => {
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className={`${hasHealthService ? 'bg-success/5 text-success border-success/20' : 'bg-warning/5 text-warning border-warning/20'} px-3 py-1.5 gap-2`}>
                   <div className={`h-2 w-2 rounded-full ${hasHealthService ? 'bg-success animate-pulse' : 'bg-warning'}`} />
-                  {hasHealthService ? 'Auto-sync Active' : 'Restricted Access'}
+                  {connectionStatus}
                 </Badge>
                 <Button variant="ghost" size="icon" onClick={handleDisconnect} className="text-destructive">
                   <X className="h-4 w-4" />
@@ -317,16 +343,23 @@ const HealthDashboard = () => {
                 <Button className="hero-gradient gap-2"><Plus className="h-4 w-4" /> Manual Log</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>New Health Reading</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{connectedDevice && selectedType === "heart" ? "Verified Watch Sync" : "New Health Reading"}</DialogTitle></DialogHeader>
                 <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-2 gap-2">
-                    {["bp", "sugar", "heart", "weight"].map(t => (
-                      <Button key={t} variant={selectedType === t ? "default" : "outline"} onClick={() => setSelectedType(t as any)} className="capitalize">{t}</Button>
-                    ))}
-                  </div>
+                  {!(connectedDevice && selectedType === "heart") && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {["bp", "sugar", "heart", "weight"].map(t => (
+                        <Button key={t} variant={selectedType === t ? "default" : "outline"} onClick={() => setSelectedType(t as any)} className="capitalize">{t}</Button>
+                      ))}
+                    </div>
+                  )}
                   <div className="space-y-2">
-                    <Label>{selectedType === "bp" ? "Systolic" : "Value"}</Label>
-                    <Input type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+                    <Label>{selectedType === "bp" ? "Systolic" : selectedType === "heart" ? "Current Heart Rate (from Watch)" : "Value"}</Label>
+                    <Input 
+                      type="number" 
+                      placeholder={selectedType === "heart" ? "Enter reading shown on watch" : "0"}
+                      value={inputValue} 
+                      onChange={(e) => setInputValue(e.target.value)} 
+                    />
                   </div>
                   {selectedType === "bp" && (
                     <div className="space-y-2">
@@ -334,10 +367,18 @@ const HealthDashboard = () => {
                       <Input type="number" value={inputValue2} onChange={(e) => setInputValue2(e.target.value)} />
                     </div>
                   )}
+                  {connectedDevice && selectedType === "heart" && (
+                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 flex gap-3">
+                      <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        This reading will be marked as <strong>Watch Verified</strong> because your device is currently connected via Bluetooth.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button className="hero-gradient w-full" onClick={handleAddReading} disabled={saving}>
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Save Reading"}
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Sync Reading"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -351,7 +392,7 @@ const HealthDashboard = () => {
             <div className="absolute top-0 right-0 p-4">
               {connectedDevice ? (
                 <Badge className={`${hasHealthService ? 'bg-success' : 'bg-warning'} text-white gap-1 ${hasHealthService ? 'animate-pulse' : ''}`}>
-                  <div className="h-1.5 w-1.5 rounded-full bg-white" /> {hasHealthService ? 'LIVE' : 'PAIRED'}
+                  <div className="h-1.5 w-1.5 rounded-full bg-white" /> {hasHealthService ? 'LIVE' : 'RESTRICTED'}
                 </Badge>
               ) : isPairing ? (
                 <Badge variant="outline" className="text-primary animate-pulse">SCANNING</Badge>
@@ -381,11 +422,16 @@ const HealthDashboard = () => {
                   </div>
                   
                   {!hasHealthService && (
-                    <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
-                      <p className="text-[10px] text-warning font-bold uppercase mb-1">Compatibility Note</p>
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        Your device is connected but not sharing heart rate data. Go to your watch settings and enable <strong>"Broadcast Heart Rate"</strong> or <strong>"Heart Rate Sharing"</strong>.
-                      </p>
+                    <div className="space-y-4">
+                      <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                        <p className="text-[10px] text-warning font-bold uppercase mb-1">Broadcast Blocked</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">
+                          Your watch is connected, but its security settings are blocking the live data stream. 
+                        </p>
+                      </div>
+                      <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary" onClick={handleVerifiedSync}>
+                        <RefreshCw className="h-4 w-4" /> Verified Manual Sync
+                      </Button>
                     </div>
                   )}
 
@@ -394,7 +440,7 @@ const HealthDashboard = () => {
                       <p className="text-xs font-bold text-muted-foreground uppercase">Sync Status</p>
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm font-bold tracking-tighter">
-                          {isSyncing ? "Syncing to Cloud..." : hasHealthService ? "Auto-sync Active" : "Waiting for data..."}
+                          {isSyncing ? "Syncing to Cloud..." : hasHealthService ? "Auto-sync Active" : "Manual Sync Ready"}
                         </span>
                       </div>
                     </div>

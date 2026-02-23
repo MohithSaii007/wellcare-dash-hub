@@ -1,3 +1,4 @@
+'} for greater-than symbols in the troubleshooting section.">
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -399,7 +400,7 @@ const HealthDashboard = () => {
               <div className="p-4 rounded-xl bg-warning/5 border border-warning/20">
                 <p className="font-bold text-warning uppercase mb-2">boAt Ultraprime Fix</p>
                 <ul className="space-y-2 list-disc pl-3">
-                  <li><strong>boAt Crest App:</strong> Go to Settings > Health Monitoring > Enable "Continuous Heart Rate".</li>
+                  <li><strong>boAt Crest App:</strong> Go to Settings {' > '} Health Monitoring {' > '} Enable "Continuous Heart Rate".</li>
                   <li><strong>Bluetooth:</strong> Unpair the watch from your phone's system Bluetooth settings (Forget Device) so the browser can take control.</li>
                   <li><strong>Visibility:</strong> Ensure the watch is not currently connected to another fitness app like Strava.</li>
                 </ul>

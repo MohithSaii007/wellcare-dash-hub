@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { 
   Zap, Calendar, Pill, RefreshCw, 
   AlertCircle, CheckCircle2, ArrowRight,
-  Clock, Info, ShoppingCart, Loader2
+  Clock, Info, ShoppingCart, Loader2, Bell
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video, Activity, AlertCircle, Phone } from "lucide-react";
+import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video, Activity, AlertCircle, Phone, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import NotificationCenter from "./NotificationCenter";
@@ -29,11 +29,11 @@ const navItems = [
   { path: "/", label: "Dashboard", icon: Home },
   { path: "/health-dashboard", label: "Health Vitals", icon: Activity },
   { path: "/ai-assistant", label: "AI Assistant", icon: Bot },
+  { path: "/prescription-intelligence", label: "AI Prescription", icon: FileText },
   { path: "/teleconsultation", label: "Teleconsult", icon: Video },
   { path: "/search", label: "Disease Search", icon: Search },
   { path: "/appointments", label: "Appointments", icon: Calendar },
   { path: "/medicines", label: "Medicines", icon: Pill },
-  { path: "/doctor-visit", label: "Doctor Visit", icon: Stethoscope },
 ];
 
 interface LayoutProps {

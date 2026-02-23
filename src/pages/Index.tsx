@@ -190,80 +190,82 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Advanced Features Showcase */}
-      <section className="container py-24">
-        <div className="grid gap-16 lg:grid-cols-2 items-center">
-          <div className="animate-fade-in">
-            <Badge className="mb-6 bg-primary/10 text-primary border-none px-4 py-1 font-bold uppercase tracking-widest text-xs">
-              Advanced Ecosystem
-            </Badge>
-            <h2 className="text-4xl font-heading font-extrabold mb-8 leading-tight">Next-Gen Healthcare Tools <br />At Your Fingertips</h2>
-            <div className="space-y-10">
-              <div className="flex gap-6">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-success/10 text-success shadow-sm">
-                  <Zap className="h-7 w-7" />
+      {/* Advanced Features Showcase - Only visible after login */}
+      {user && (
+        <section className="container py-24">
+          <div className="grid gap-16 lg:grid-cols-2 items-center">
+            <div className="animate-fade-in">
+              <Badge className="mb-6 bg-primary/10 text-primary border-none px-4 py-1 font-bold uppercase tracking-widest text-xs">
+                Advanced Ecosystem
+              </Badge>
+              <h2 className="text-4xl font-heading font-extrabold mb-8 leading-tight">Next-Gen Healthcare Tools <br />At Your Fingertips</h2>
+              <div className="space-y-10">
+                <div className="flex gap-6">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-success/10 text-success shadow-sm">
+                    <Zap className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xl mb-2">Medicine Price Comparison</h4>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      Don't overpay for your health. Our engine scans partnered pharmacies in real-time to find the lowest prices, fastest delivery, and best discounts for every medicine.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-xl mb-2">Medicine Price Comparison</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">
-                    Don't overpay for your health. Our engine scans partnered pharmacies in real-time to find the lowest prices, fastest delivery, and best discounts for every medicine.
-                  </p>
+                <div className="flex gap-6">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+                    <RefreshCw className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xl mb-2">Smart Refill Prediction (AI)</h4>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      Our AI tracks your dosage and purchase history to predict exactly when you'll run out. Get reminders 3 days early and refill with a single tap.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-6">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent shadow-sm">
+                    <Activity className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xl mb-2">Real-time Health Vitals</h4>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      Monitor BP, Sugar, and Heart Rate with smart trend analysis. Get instant alerts if your readings fall outside the normal range.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-6">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-                  <RefreshCw className="h-7 w-7" />
+            </div>
+            <div className="relative animate-fade-in" style={{ animationDelay: "200ms" }}>
+              <div className="aspect-square rounded-[3rem] hero-gradient opacity-5 absolute -inset-8 rotate-6" />
+              <div className="relative rounded-[2.5rem] border bg-card p-10 card-shadow overflow-hidden border-border/50">
+                <div className="absolute top-0 right-0 p-6">
+                  <Badge variant="outline" className="bg-success/5 text-success border-success/20 font-bold uppercase tracking-tighter">AI Verified</Badge>
                 </div>
-                <div>
-                  <h4 className="font-bold text-xl mb-2">Smart Refill Prediction (AI)</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">
-                    Our AI tracks your dosage and purchase history to predict exactly when you'll run out. Get reminders 3 days early and refill with a single tap.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-6">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent shadow-sm">
-                  <Activity className="h-7 w-7" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-xl mb-2">Real-time Health Vitals</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">
-                    Monitor BP, Sugar, and Heart Rate with smart trend analysis. Get instant alerts if your readings fall outside the normal range.
-                  </p>
+                <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                  <RefreshCw className="h-6 w-6 text-primary" />
+                  Refill Prediction
+                </h3>
+                <div className="space-y-8">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-lg">Paracetamol 500mg</span>
+                      <span className="text-destructive font-bold text-sm bg-destructive/10 px-3 py-1 rounded-full">2 days left</span>
+                    </div>
+                    <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-destructive animate-pulse" style={{ width: '15%' }} />
+                    </div>
+                  </div>
+                  <div className="p-6 rounded-3xl bg-muted/30 border border-dashed border-muted-foreground/20">
+                    <p className="text-xs text-muted-foreground uppercase font-bold mb-3 tracking-widest">AI Insight</p>
+                    <p className="text-sm italic leading-relaxed text-foreground/80">"Based on your 2x daily dosage, your supply will deplete on Friday. Would you like to refill now?"</p>
+                  </div>
+                  <Button className="w-full hero-gradient shadow-xl shadow-primary/20 h-14 text-lg font-bold rounded-2xl" onClick={() => navigate("/refills")}>One-Tap Refill Now</Button>
                 </div>
               </div>
             </div>
           </div>
-          <div className="relative animate-fade-in" style={{ animationDelay: "200ms" }}>
-            <div className="aspect-square rounded-[3rem] hero-gradient opacity-5 absolute -inset-8 rotate-6" />
-            <div className="relative rounded-[2.5rem] border bg-card p-10 card-shadow overflow-hidden border-border/50">
-              <div className="absolute top-0 right-0 p-6">
-                <Badge variant="outline" className="bg-success/5 text-success border-success/20 font-bold uppercase tracking-tighter">AI Verified</Badge>
-              </div>
-              <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
-                <RefreshCw className="h-6 w-6 text-primary" />
-                Refill Prediction
-              </h3>
-              <div className="space-y-8">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="font-extrabold text-lg">Paracetamol 500mg</span>
-                    <span className="text-destructive font-bold text-sm bg-destructive/10 px-3 py-1 rounded-full">2 days left</span>
-                  </div>
-                  <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-destructive animate-pulse" style={{ width: '15%' }} />
-                  </div>
-                </div>
-                <div className="p-6 rounded-3xl bg-muted/30 border border-dashed border-muted-foreground/20">
-                  <p className="text-xs text-muted-foreground uppercase font-bold mb-3 tracking-widest">AI Insight</p>
-                  <p className="text-sm italic leading-relaxed text-foreground/80">"Based on your 2x daily dosage, your supply will deplete on Friday. Would you like to refill now?"</p>
-                </div>
-                <Button className="w-full hero-gradient shadow-xl shadow-primary/20 h-14 text-lg font-bold rounded-2xl" onClick={() => navigate("/refills")}>One-Tap Refill Now</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="container pb-24">

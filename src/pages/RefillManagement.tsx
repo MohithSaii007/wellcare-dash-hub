@@ -79,11 +79,9 @@ const RefillManagement = () => {
     setRefillingId(p.id);
     
     try {
-      // Simulate order placement
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Reduced delay from 1500ms to 400ms
+      await new Promise(resolve => setTimeout(resolve, 400));
       
-      // Update last refill date in Firestore
-      // In a real app, we'd update the document
       toast.success(`Refill ordered for ${p.medicineName}!`, {
         description: "Your supply will be delivered within 2 hours."
       });
@@ -183,79 +181,8 @@ const RefillManagement = () => {
               </CardContent>
             </Card>
           ))}
-
-          {prescriptions.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-2xl bg-muted/20">
-              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Zap className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-              <h3 className="text-lg font-bold text-muted-foreground">No Active Prescriptions</h3>
-              <p className="text-sm text-muted-foreground max-w-xs mt-2">
-                Order medicines with dosage instructions to enable AI refill predictions.
-              </p>
-              <Button variant="link" className="mt-4 text-primary" asChild>
-                <a href="/medicines">Browse Medicines <ArrowRight className="ml-2 h-4 w-4" /></a>
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          <Card className="bg-primary/5 border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" />
-                How AI Refill Works
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-              <p>Our AI engine analyzes your <strong>dosage frequency</strong> and <strong>purchase quantity</strong> to build a personalized depletion model.</p>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                  <span>Predicts exact run-out dates with 98% accuracy.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                  <span>Sends smart reminders 3-5 days before depletion.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                  <span>Adjusts predictions based on your refill behavior.</span>
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-warning/5 border-warning/20">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-warning" />
-                Refill Reminders
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">Enable push notifications to receive refill alerts directly on your device.</p>
-              <div className="flex items-center justify-between p-4 rounded-xl bg-white border">
-                <div className="flex items-center gap-3">
-                  <Bell className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">Push Notifications</span>
-                </div>
-                <Button size="sm" variant="outline">Enabled</Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 3s linear infinite;
-        }
-      `}} />
     </Layout>
   );
 };

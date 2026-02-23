@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./hooks/use-auth";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import DiseaseSearch from "./pages/DiseaseSearch";
 import Appointments from "./pages/Appointments";
@@ -30,16 +31,19 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/search" element={<DiseaseSearch />} />
-            <Route path="/appointments" element={<Appointments />} />
-            <Route path="/medicines" element={<Medicines />} />
-            <Route path="/doctor-visit" element={<DoctorVisit />} />
-            <Route path="/ai-assistant" element={<AIAssistant />} />
-            <Route path="/teleconsultation" element={<Teleconsultation />} />
-            <Route path="/video-call/:appointmentId" element={<VideoCall />} />
-            <Route path="/health-dashboard" element={<HealthDashboard />} />
-            <Route path="/refills" element={<RefillManagement />} />
-            <Route path="/profile" element={<Profile />} />
+            
+            {/* Protected Routes */}
+            <Route path="/search" element={<ProtectedRoute><DiseaseSearch /></ProtectedRoute>} />
+            <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
+            <Route path="/medicines" element={<ProtectedRoute><Medicines /></ProtectedRoute>} />
+            <Route path="/doctor-visit" element={<ProtectedRoute><DoctorVisit /></ProtectedRoute>} />
+            <Route path="/ai-assistant" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
+            <Route path="/teleconsultation" element={<ProtectedRoute><Teleconsultation /></ProtectedRoute>} />
+            <Route path="/video-call/:appointmentId" element={<ProtectedRoute><VideoCall /></ProtectedRoute>} />
+            <Route path="/health-dashboard" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
+            <Route path="/refills" element={<ProtectedRoute><RefillManagement /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

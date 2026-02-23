@@ -48,7 +48,7 @@ const Index = () => {
       toast.info("Please login to access MedCare services", {
         description: "You need an account to book appointments or order medicines."
       });
-      navigate("/auth");
+      navigate("/auth", { state: { from: { pathname: path } } });
     }
   };
 
@@ -265,86 +265,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="bg-muted/30 py-24">
-        <div className="container">
-          <div className="grid gap-16 lg:grid-cols-2 items-center">
-            <div className="animate-fade-in">
-              <Badge className="mb-6 bg-secondary/10 text-secondary border-none px-4 py-1 font-bold uppercase tracking-widest text-xs">
-                The MedCare Advantage
-              </Badge>
-              <h2 className="text-4xl font-heading font-extrabold mb-10 leading-tight">Why Thousands Trust <br />MedCare Every Day</h2>
-              <div className="grid gap-8 sm:grid-cols-2">
-                {[
-                  { title: "24/7 AI Support", desc: "Get instant health insights anytime, anywhere with our assistant.", icon: Zap, color: "text-primary" },
-                  { title: "Verified Pros", desc: "All doctors and hospitals are strictly verified for quality care.", icon: ShieldCheck, color: "text-success" },
-                  { title: "Fast Delivery", desc: "Medicines delivered to your doorstep within hours of ordering.", icon: Clock, color: "text-accent" },
-                  { title: "Secure Records", desc: "Manage your medical history in one secure, encrypted place.", icon: CheckCircle2, color: "text-secondary" }
-                ].map((feature, i) => (
-                  <div key={i} className="flex flex-col gap-4 p-6 rounded-3xl bg-white border border-border/50 shadow-sm hover:shadow-md transition-shadow">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-muted ${feature.color}`}>
-                      <feature.icon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-lg mb-1">{feature.title}</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="relative animate-fade-in" style={{ animationDelay: "200ms" }}>
-              <div className="aspect-square rounded-[3rem] hero-gradient opacity-10 absolute -inset-8 rotate-3" />
-              <div className="relative rounded-[2.5rem] border bg-card p-12 card-shadow border-border/50">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="h-14 w-14 rounded-2xl bg-success/10 flex items-center justify-center text-success shadow-sm">
-                    <Shield className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xl">Secure & Private</h4>
-                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">End-to-End Encrypted</p>
-                  </div>
-                </div>
-                <p className="text-lg text-muted-foreground leading-relaxed mb-10 italic">
-                  "MedCare has completely changed how I manage my family's health. From checking symptoms to getting medicines delivered, it's all so seamless and trustworthy."
-                </p>
-                <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 rounded-full bg-muted border-2 border-white shadow-sm" />
-                  <div>
-                    <p className="text-lg font-bold">Sarah Jenkins</p>
-                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">Verified User</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="container py-24">
-        <div className="rounded-[3rem] hero-gradient p-12 md:p-20 shadow-2xl shadow-primary/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-          
-          <div className="grid gap-12 text-center sm:grid-cols-3 relative z-10">
-            {[
-              { label: "Diseases Covered", value: "500+", icon: Activity },
-              { label: "Verified Doctors", value: "200+", icon: Stethoscope },
-              { label: "Medicines Available", value: "1000+", icon: Shield },
-            ].map((stat) => (
-              <div key={stat.label} className="animate-fade-in">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md">
-                  <stat.icon className="h-8 w-8 text-primary-foreground" />
-                </div>
-                <div className="text-5xl font-heading font-extrabold text-primary-foreground tracking-tighter mb-2">{stat.value}</div>
-                <div className="text-sm font-bold text-primary-foreground/70 uppercase tracking-widest">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="container pb-24">
         <div className="rounded-[3.5rem] border bg-card p-12 md:p-24 text-center card-shadow relative overflow-hidden border-border/50">
@@ -358,9 +278,11 @@ const Index = () => {
             <h2 className="text-4xl md:text-6xl font-heading font-extrabold mb-8 leading-tight">Ready to take control <br />of your health?</h2>
             <p className="text-xl text-muted-foreground mb-12 leading-relaxed">Join thousands of users who trust MedCare for their daily healthcare needs. Experience the future of medicine today.</p>
             <div className="flex flex-wrap justify-center gap-6">
-              <Button size="lg" className="hero-gradient border-none h-16 px-10 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20" asChild>
-                <Link to="/auth">Get Started Now</Link>
-              </Button>
+              {!user && (
+                <Button size="lg" className="hero-gradient border-none h-16 px-10 text-xl font-bold rounded-2xl shadow-xl shadow-primary/20" asChild>
+                  <Link to="/auth">Get Started Now</Link>
+                </Button>
+              )}
               <Button 
                 size="lg" 
                 variant="outline" 

@@ -33,19 +33,15 @@ interface ClinicalData {
 }
 
 interface AnalysisResult {
-  // Clinical Reasoning Fields
   explanation: string;
   differentialDiagnosis: { name: string; probability: number; reasoning: string }[];
   riskLevel: "Low" | "Medium" | "High";
   clinicalAdvice: string[];
-  
-  // Doctor Matching Engine Fields
   symptomUnderstanding: string;
   recommendedDoctor: string;
   consultationMode: "Online" | "In-person" | "Emergency";
   urgencyLevel: "Routine" | "Priority" | "Emergency";
   matchingReason: string;
-  
   emergency?: string;
   sources: string[];
 }
@@ -89,6 +85,7 @@ const AIAssistant = () => {
   const performClinicalReasoning = (inputSymptoms: string, data: ClinicalData) => {
     setIsAnalyzing(true);
     
+    // Reduced delay from 2000ms to 600ms for faster response
     setTimeout(() => {
       const inputLower = inputSymptoms.toLowerCase();
       const words = inputLower.split(/[\s,.]+/).filter(w => w.length > 2);
@@ -116,7 +113,6 @@ const AIAssistant = () => {
       const totalScore = topMatches.reduce((sum, m) => sum + m.score, 0);
       const primary = topMatches[0].disease;
       
-      // Urgency & Risk Logic
       let riskLevel: "Low" | "Medium" | "High" = "Low";
       const isEmergencySymptom = inputLower.includes("chest pain") || inputLower.includes("breathing") || inputLower.includes("unconscious") || inputLower.includes("severe bleeding");
       
@@ -135,14 +131,11 @@ const AIAssistant = () => {
         })),
         riskLevel,
         clinicalAdvice: primary.cures.slice(0, 3),
-        
-        // Doctor Matching Engine Fields
         symptomUnderstanding: `Symptoms indicate acute involvement of the ${primary.category.toLowerCase()} medical system.`,
         recommendedDoctor: getSpecialty(primary.category),
         consultationMode: riskLevel === "High" ? "Emergency" : riskLevel === "Medium" ? "In-person" : "Online",
         urgencyLevel: riskLevel === "High" ? "Emergency" : riskLevel === "Medium" ? "Priority" : "Routine",
         matchingReason: `Based on the ${primary.category.toLowerCase()} nature of symptoms and a ${riskLevel.toLowerCase()} risk profile.`,
-        
         emergency: riskLevel === "High" ? "CRITICAL: Presenting symptoms indicate a potential medical emergency. Proceed to the nearest Emergency Department immediately." : undefined,
         sources: ["WHO Clinical Guidelines", "CDC Disease Database", "Mayo Clinic"]
       };
@@ -150,7 +143,7 @@ const AIAssistant = () => {
       setResult(analysis);
       setIsAnalyzing(false);
       toast.success("Doctor matching complete.");
-    }, 2000);
+    }, 600);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -176,7 +169,6 @@ const AIAssistant = () => {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-12">
-          {/* Input Section */}
           <div className="lg:col-span-5 space-y-6">
             <Card className="border-primary/20 shadow-lg">
               <CardHeader className="pb-4">
@@ -277,19 +269,8 @@ const AIAssistant = () => {
                 </form>
               </CardContent>
             </Card>
-
-            <div className="rounded-xl bg-muted/50 p-4 border border-dashed">
-              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase mb-2">
-                <Info className="h-3 w-3" />
-                Matching Logic
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Our engine cross-references symptoms with 16+ medical specialties and urgency protocols to ensure you see the right expert.
-              </p>
-            </div>
           </div>
 
-          {/* Results Section */}
           <div className="lg:col-span-7">
             {isAnalyzing ? (
               <div className="flex flex-col items-center justify-center h-full py-20 space-y-4">
@@ -304,7 +285,6 @@ const AIAssistant = () => {
               </div>
             ) : result ? (
               <div className="space-y-6 animate-fade-in">
-                {/* Doctor Matching Report */}
                 <Card className="overflow-hidden border-l-4 border-l-primary shadow-xl">
                   <CardHeader className="bg-muted/30 pb-4">
                     <div className="flex items-center justify-between">
@@ -328,10 +308,9 @@ const AIAssistant = () => {
                       <p className="text-sm font-medium text-foreground">{result.symptomUnderstanding}</p>
                     </section>
 
-                    {/* Predicted Diseases Section */}
                     <section className="space-y-4">
                       <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-                        🩺 Predicted Conditions (Differential Diagnosis)
+                        🩺 Predicted Conditions
                       </h3>
                       <div className="space-y-4">
                         {result.differentialDiagnosis.map((d, i) => (
@@ -341,7 +320,6 @@ const AIAssistant = () => {
                               <span className="font-mono text-primary font-bold">{d.probability}%</span>
                             </div>
                             <Progress value={d.probability} className="h-1.5" />
-                            <p className="text-[10px] text-muted-foreground italic">{d.reasoning}</p>
                           </div>
                         ))}
                       </div>
@@ -365,20 +343,6 @@ const AIAssistant = () => {
                         </div>
                       </section>
                     </div>
-
-                    <section>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-                        ⏱ Urgency Level
-                      </h3>
-                      <p className="text-sm font-semibold">{result.urgencyLevel}</p>
-                    </section>
-
-                    <section>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-                        📌 Reason for Matching
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{result.matchingReason}</p>
-                    </section>
 
                     {result.emergency && (
                       <div className="rounded-xl bg-destructive/10 p-4 border border-destructive/20 animate-pulse">
@@ -404,13 +368,6 @@ const AIAssistant = () => {
                     </div>
                   </CardContent>
                 </Card>
-
-                <div className="flex items-start gap-3 rounded-xl bg-warning/5 p-4 text-[10px] text-muted-foreground border border-warning/20">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
-                  <p>
-                    <strong>Clinical Disclaimer:</strong> This system provides decision support based on statistical modeling and clinical guidelines. It is NOT a substitute for professional medical judgment. All findings must be validated by a licensed healthcare provider.
-                  </p>
-                </div>
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center text-center p-12 rounded-2xl border-2 border-dashed bg-muted/20">

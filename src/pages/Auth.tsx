@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -11,20 +11,23 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
 
-  // Redirect if already logged in
+  const from = location.state?.from?.pathname || "/";
+
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/");
+      navigate(from, { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, from]);
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,14 +39,11 @@ const Auth = () => {
     const phone = formData.get("phone") as string;
 
     try {
-      console.log("Attempting signup for:", email);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
 
-      // Update Firebase Auth profile
       await updateProfile(newUser, { displayName: name });
 
-      // Store additional data in Firestore
       await setDoc(doc(db, "profiles", newUser.uid), {
         personal: {
           fullName: name,
@@ -68,10 +68,8 @@ const Auth = () => {
       });
 
       toast.success("Account created successfully!");
-      navigate("/");
     } catch (error: any) {
-      console.error("Signup error:", error);
-      toast.error(error.message || "Failed to create account. Please check your details.");
+      toast.error(error.message || "Failed to create account.");
     } finally {
       setLoading(false);
     }
@@ -87,10 +85,8 @@ const Auth = () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success("Logged in successfully!");
-      navigate("/");
     } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error(error.message || "Failed to login. Please check your credentials.");
+      toast.error(error.message || "Failed to login.");
     } finally {
       setLoading(false);
     }
@@ -135,7 +131,23 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
-                    <Input id="login-password" name="password" type="password" required />
+                    <div className="relative">
+                      <Input 
+                        id="login-password" 
+                        name="password" 
+                        type={showPassword ? "text" : "password"} 
+                        required 
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -170,7 +182,23 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input id="signup-password" name="password" type="password" required />
+                    <div className="relative">
+                      <Input 
+                        id="signup-password" 
+                        name="password" 
+                        type={showPassword ? "text" : "password"} 
+                        required 
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter>

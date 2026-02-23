@@ -1,4 +1,4 @@
-import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Heart, Droplets, Scale, RefreshCw, Video, Sparkles, TrendingUp, FileText } from "lucide-react";
+import { Search, Calendar, Pill, Stethoscope, Activity, Shield, Bot, CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Heart, Droplets, Scale, RefreshCw, Video, Sparkles, TrendingUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import ServiceCard from "@/components/ServiceCard";
@@ -152,21 +152,12 @@ const Index = () => {
       <section className={`container ${user ? 'py-12' : '-mt-20 relative z-10 pb-24'}`}>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <ServiceCard
-            title="Prescription AI"
-            description="Upload your prescription and let AI extract medicines instantly."
-            icon={FileText}
-            to="/prescription-ai"
-            color="warning"
-            delay={0}
-            onClick={(e) => handleProtectedClick(e, "/prescription-ai")}
-          />
-          <ServiceCard
             title="AI Symptom Checker"
             description="Clinical-grade analysis to match you with the right specialist instantly."
             icon={Bot}
             to="/ai-assistant"
             color="accent"
-            delay={100}
+            delay={0}
             onClick={(e) => handleProtectedClick(e, "/ai-assistant")}
           />
           <ServiceCard
@@ -175,7 +166,7 @@ const Index = () => {
             icon={RefreshCw}
             to="/refills"
             color="primary"
-            delay={200}
+            delay={100}
             onClick={(e) => handleProtectedClick(e, "/refills")}
           />
           <ServiceCard
@@ -184,8 +175,17 @@ const Index = () => {
             icon={Search}
             to="/medicines"
             color="success"
-            delay={300}
+            delay={200}
             onClick={(e) => handleProtectedClick(e, "/medicines")}
+          />
+          <ServiceCard
+            title="Teleconsultation"
+            description="HD video calls with top specialists and instant e-prescriptions."
+            icon={Video}
+            to="/teleconsultation"
+            color="secondary"
+            delay={300}
+            onClick={(e) => handleProtectedClick(e, "/teleconsultation")}
           />
         </div>
       </section>
@@ -200,17 +200,6 @@ const Index = () => {
               </Badge>
               <h2 className="text-4xl font-heading font-extrabold mb-8 leading-tight">Next-Gen Healthcare Tools <br />At Your Fingertips</h2>
               <div className="space-y-10">
-                <div className="flex gap-6">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-warning/10 text-warning shadow-sm">
-                    <FileText className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xl mb-2">AI Prescription Reading</h4>
-                    <p className="text-base text-muted-foreground leading-relaxed">
-                      Our proprietary OCR engine reads handwritten prescriptions with 98% accuracy, extracting medicine names and dosages automatically.
-                    </p>
-                  </div>
-                </div>
                 <div className="flex gap-6">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-success/10 text-success shadow-sm">
                     <Zap className="h-7 w-7" />
@@ -230,6 +219,17 @@ const Index = () => {
                     <h4 className="font-bold text-xl mb-2">Smart Refill Prediction (AI)</h4>
                     <p className="text-base text-muted-foreground leading-relaxed">
                       Our AI tracks your dosage and purchase history to predict exactly when you'll run out. Get reminders 3 days early and refill with a single tap.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-6">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent shadow-sm">
+                    <Activity className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xl mb-2">Real-time Health Vitals</h4>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      Monitor BP, Sugar, and Heart Rate with smart trend analysis. Get instant alerts if your readings fall outside the normal range.
                     </p>
                   </div>
                 </div>

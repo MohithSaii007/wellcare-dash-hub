@@ -18,7 +18,6 @@ import RefillManagement from "./pages/RefillManagement";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import PrescriptionModule from "./pages/PrescriptionModule";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +43,6 @@ const App = () => (
             <Route path="/health-dashboard" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
             <Route path="/refills" element={<ProtectedRoute><RefillManagement /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/prescription-ai" element={<ProtectedRoute><PrescriptionModule /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

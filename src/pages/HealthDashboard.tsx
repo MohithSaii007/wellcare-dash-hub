@@ -16,13 +16,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, AreaChart, Area 
 } from "recharts";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, query, where, orderBy, onSnapshot, Timestamp, limit } from "firebase/firestore";
+import { collection, addDoc, query, where, orderBy, onSnapshot, Timestamp, limit, deleteDoc, doc } from "firebase/firestore";
 import { toast } from "sonner";
 
 interface HealthReading {
@@ -232,6 +233,15 @@ const HealthDashboard = () => {
     }
   };
 
+  const handleDeleteReading = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "health_readings", id));
+      toast.success("Reading deleted");
+    } catch (error) {
+      toast.error("Failed to delete reading");
+    }
+  };
+
   const chartData = useMemo(() => {
     return readings
       .filter(r => r.type === selectedType)
@@ -393,6 +403,43 @@ const HealthDashboard = () => {
             </CardContent>
           </Card>
 
+          <Card className="card-shadow">
+            <CardHeader><CardTitle className="text-lg">Recent History</CardTitle></CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-4">
+                  {readings.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg bg-white shadow-sm ${r.type === 'bp' ? 'text-destructive' : r.type === 'sugar' ? 'text-primary' : 'text-success'}`}>
+                          {r.type === 'bp' ? <Heart className="h-4 w-4" /> : r.type === 'sugar' ? <Droplets className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold capitalize">{r.type} Reading</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000).toLocaleString() : '...'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-sm font-bold">{r.value}{r.value2 ? '/' + r.value2 : ''} {r.unit}</p>
+                          <Badge variant="outline" className="text-[8px] h-4 px-1.5">{r.source || 'manual'}</Badge>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteReading(r.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {readings.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No readings found.</p>}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-3">
           <Card className="card-shadow">
             <CardHeader><CardTitle className="text-lg">Troubleshooting</CardTitle></CardHeader>
             <CardContent className="space-y-4 text-[10px] text-muted-foreground leading-relaxed">

@@ -71,6 +71,20 @@ const Medicines = () => {
 
   const removeFromCart = (id: string) => setCart((prev) => prev.filter((c) => c.medicine.id !== id));
 
+  const handleSmartOrder = () => {
+    const input = smartInput.toLowerCase();
+    const match = medicines.find(m => input.includes(m.name.toLowerCase()));
+    if (match) {
+      const qtyMatch = input.match(/\d+/);
+      const qty = qtyMatch ? parseInt(qtyMatch[0]) : 1;
+      handleMedicineClick(match);
+      setSmartInput("");
+      toast.success(`Smart Match: Found ${match.name}`);
+    } else {
+      toast.error("Could not recognize medicine name. Try 'Add 2 Paracetamol'");
+    }
+  };
+
   const billing = useMemo(() => {
     const subtotal = cart.reduce((sum, c) => sum + c.medicine.price * c.qty, 0);
     const tax = Math.round(subtotal * 0.05);
@@ -144,7 +158,7 @@ const Medicines = () => {
         </div>
 
         <div className="mb-12 rounded-[2rem] border border-primary/10 bg-accent/5 p-6 shadow-sm animate-fade-in">
-          <form onSubmit={(e) => e.preventDefault()} className="flex flex-col sm:flex-row gap-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleSmartOrder(); }} className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Sparkles className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
               <Input 

@@ -6,7 +6,7 @@ import {
   TrendingUp, AlertCircle, Calendar, ChevronRight,
   Info, Bell, Download, Share2, Trash2, Loader2,
   ArrowUpRight, ArrowDownRight, Minus, Watch, RefreshCw,
-  Bluetooth, Smartphone, Battery, Signal, X, Search, CheckCircle2, ExternalLink
+  Bluetooth, Smartphone, Battery, Signal, X, Search, CheckCircle2, ExternalLink, ShieldCheck
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,13 @@ interface HealthReading {
   source?: "manual" | "watch";
 }
 
+const NORMAL_RANGES = {
+  bp: { min: 90, max: 120, min2: 60, max2: 80, label: "120/80 mmHg" },
+  sugar: { min: 70, max: 140, label: "70-140 mg/dL" },
+  heart: { min: 60, max: 100, label: "60-100 bpm" },
+  weight: { min: 50, max: 90, label: "Healthy BMI range" }
+};
+
 const HealthDashboard = () => {
   const { user } = useAuth();
   const [readings, setReadings] = useState<HealthReading[]>([]);
@@ -52,7 +59,6 @@ const HealthDashboard = () => {
   const [hasHealthService, setHasHealthService] = useState<boolean>(false);
   const [connectionStatus, setConnectionStatus] = useState<string>("Disconnected");
   
-  // Refs for auto-sync logic
   const lastSyncTimeRef = useRef<number>(0);
   const SYNC_INTERVAL = 30000;
 
@@ -94,6 +100,21 @@ const HealthDashboard = () => {
     }
   }, [user]);
 
+  const getStatus = (type: string, val1: number, val2?: number) => {
+    const range = NORMAL_RANGES[type as keyof typeof NORMAL_RANGES];
+    if (!range) return "normal";
+    
+    if (type === "bp" && val2) {
+      if (val1 > range.max || val2 > range.max2) return "high";
+      if (val1 < range.min || val2 < range.min2) return "low";
+      return "normal";
+    }
+    
+    if (val1 > range.max) return "high";
+    if (val1 < range.min) return "low";
+    return "normal";
+  };
+
   const autoSyncReading = async (value: number, isManualTrigger = false) => {
     const now = Date.now();
     if (!isManualTrigger && (now - lastSyncTimeRef.current < SYNC_INTERVAL)) return;
@@ -109,7 +130,7 @@ const HealthDashboard = () => {
         value: value,
         unit: "bpm",
         timestamp: Timestamp.now(),
-        status: value > 100 ? "high" : value < 60 ? "low" : "normal",
+        status: getStatus("heart", value),
         source: "watch"
       });
       if (isManualTrigger) toast.success("Verified watch reading synced!");
@@ -181,9 +202,7 @@ const HealthDashboard = () => {
       } else {
         setHasHealthService(false);
         setConnectionStatus("Restricted Access");
-        toast.warning("Connected, but data is restricted.", {
-          description: "Check the Troubleshooting section for boAt Ultraprime instructions."
-        });
+        toast.warning("Connected, but data is restricted.");
       }
 
       setConnectedDevice(device);
@@ -202,24 +221,21 @@ const HealthDashboard = () => {
     }
   };
 
-  const handleVerifiedSync = () => {
-    setSelectedType("heart");
-    setInputValue("");
-    setShowAddDialog(true);
-  };
-
   const handleAddReading = async () => {
     if (!user || !inputValue) return;
     setSaving(true);
+    const val1 = parseFloat(inputValue);
+    const val2 = inputValue2 ? parseFloat(inputValue2) : undefined;
+    
     try {
       await addDoc(collection(db, "health_readings"), {
         userId: user.uid,
         type: selectedType,
-        value: parseFloat(inputValue),
-        value2: inputValue2 ? parseFloat(inputValue2) : undefined,
+        value: val1,
+        value2: val2,
         unit: selectedType === "bp" ? "mmHg" : selectedType === "sugar" ? "mg/dL" : selectedType === "weight" ? "kg" : "bpm",
         timestamp: Timestamp.now(),
-        status: "normal",
+        status: getStatus(selectedType, val1, val2),
         source: connectedDevice && selectedType === "heart" ? "watch" : "manual"
       });
       toast.success("Reading saved");
@@ -264,104 +280,112 @@ const HealthDashboard = () => {
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
           <div>
             <h1 className="text-3xl font-heading font-bold flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl hero-gradient text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl hero-gradient text-white shadow-lg shadow-primary/20">
                 <Activity className="h-5 w-5" />
               </div>
-              Real-time Vitals
+              Health Vitals
             </h1>
-            <p className="mt-1 text-muted-foreground">Connect your physical smart watch via Bluetooth.</p>
+            <p className="mt-1 text-muted-foreground">Real-time monitoring and historical health trends.</p>
           </div>
           
           <div className="flex items-center gap-2">
             {!connectedDevice ? (
-              <Button variant="outline" className="gap-2 border-primary/30 text-primary" onClick={startDiscovery} disabled={isPairing}>
+              <Button variant="outline" className="gap-2 border-primary/30 text-primary rounded-xl" onClick={startDiscovery} disabled={isPairing}>
                 {isPairing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bluetooth className="h-4 w-4" />}
-                Pair Smart Watch
+                Pair Watch
               </Button>
             ) : (
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className={`${hasHealthService ? 'bg-success/5 text-success border-success/20' : 'bg-warning/5 text-warning border-warning/20'} px-3 py-1.5 gap-2`}>
+                <Badge variant="outline" className={`${hasHealthService ? 'bg-success/5 text-success border-success/20' : 'bg-warning/5 text-warning border-warning/20'} px-3 py-1.5 gap-2 rounded-full`}>
                   <div className={`h-2 w-2 rounded-full ${hasHealthService ? 'bg-success animate-pulse' : 'bg-warning'}`} />
                   {connectionStatus}
                 </Badge>
-                <Button variant="ghost" size="icon" onClick={() => connectedDevice.gatt.disconnect()} className="text-destructive">
+                <Button variant="ghost" size="icon" onClick={() => connectedDevice.gatt.disconnect()} className="text-destructive rounded-full">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             )}
-            <Button className="hero-gradient gap-2" onClick={() => { setSelectedType("bp"); setShowAddDialog(true); }}>
-              <Plus className="h-4 w-4" /> Manual Log
+            <Button className="hero-gradient gap-2 rounded-xl shadow-lg shadow-primary/20" onClick={() => { setSelectedType("bp"); setShowAddDialog(true); }}>
+              <Plus className="h-4 w-4" /> Log Vital
             </Button>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-12 mb-8">
-          <Card className="lg:col-span-4 border-primary/20 bg-primary/5 card-shadow overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4">
+          <Card className="lg:col-span-4 border-primary/10 bg-primary/5 card-shadow rounded-[2rem] overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-6">
               {connectedDevice ? (
-                <Badge className={`${hasHealthService ? 'bg-success' : 'bg-warning'} text-white gap-1 ${hasHealthService ? 'animate-pulse' : ''}`}>
+                <Badge className={`${hasHealthService ? 'bg-success' : 'bg-warning'} text-white gap-1 ${hasHealthService ? 'animate-pulse' : ''} rounded-full px-3`}>
                   <div className="h-1.5 w-1.5 rounded-full bg-white" /> {hasHealthService ? 'LIVE' : 'RESTRICTED'}
                 </Badge>
-              ) : <Badge variant="outline" className="text-muted-foreground">OFFLINE</Badge>}
+              ) : <Badge variant="outline" className="text-muted-foreground rounded-full">OFFLINE</Badge>}
             </div>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2"><Watch className="h-5 w-5 text-primary" /> Live Stream</CardTitle>
-              <CardDescription>{connectedDevice?.name || "No device connected"}</CardDescription>
+              <CardTitle className="text-lg flex items-center gap-2"><Watch className="h-5 w-5 text-primary" /> Smart Stream</CardTitle>
+              <CardDescription>{connectedDevice?.name || "Connect a wearable device"}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
               {connectedDevice ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-muted-foreground uppercase">Heart Rate</p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold tracking-tighter">{liveHeartRate || "--"}</span>
-                        <span className="text-sm text-muted-foreground">bpm</span>
-                      </div>
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/50 border border-white/20">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live Heart Rate</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-extrabold tracking-tighter text-primary">{liveHeartRate || "--"}</span>
+                      <span className="text-sm font-bold text-muted-foreground">bpm</span>
                     </div>
-                    <Heart className={`h-10 w-10 text-destructive ${liveHeartRate ? 'animate-pulse' : 'opacity-20'}`} />
                   </div>
-                  {!hasHealthService && (
-                    <Button variant="outline" className="w-full gap-2 border-primary/30 text-primary" onClick={handleVerifiedSync}>
-                      <RefreshCw className="h-4 w-4" /> Verified Manual Sync
-                    </Button>
-                  )}
-                </>
+                  <Heart className={`h-12 w-12 text-destructive ${liveHeartRate ? 'animate-pulse' : 'opacity-20'}`} />
+                </div>
               ) : discoveredDevice ? (
-                <div className="p-4 rounded-xl bg-white border border-primary/20 shadow-sm flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-white border border-primary/10 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Bluetooth className="h-5 w-5 text-primary" />
                     <p className="text-sm font-bold">{discoveredDevice.name || 'Wearable'}</p>
                   </div>
-                  <Button size="sm" className="hero-gradient" onClick={() => connectToDevice(discoveredDevice)}>Connect</Button>
+                  <Button size="sm" className="hero-gradient rounded-xl" onClick={() => connectToDevice(discoveredDevice)}>Connect</Button>
                 </div>
               ) : (
-                <Button className="w-full hero-gradient" onClick={startDiscovery} disabled={isPairing}>
-                  {isPairing ? "Scanning..." : "Start Discovery"}
-                </Button>
+                <div className="text-center py-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Smartphone className="h-8 w-8 text-primary/40" />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">Pair your boAt, Apple, or Samsung watch to stream live vitals.</p>
+                  <Button className="w-full hero-gradient rounded-xl shadow-lg" onClick={startDiscovery} disabled={isPairing}>
+                    {isPairing ? "Scanning..." : "Start Discovery"}
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
 
           <div className="lg:col-span-8 grid gap-4 md:grid-cols-2">
             {[
-              { type: "bp", label: "Last BP Reading", icon: Heart, color: "text-destructive", unit: "mmHg" },
-              { type: "sugar", label: "Last Sugar Reading", icon: Droplets, color: "text-primary", unit: "mg/dL" },
-              { type: "heart", label: "Last Heart Rate", icon: Activity, color: "text-success", unit: "bpm" },
-              { type: "weight", label: "Current Weight", icon: Scale, color: "text-warning", unit: "kg" }
+              { type: "bp", label: "Blood Pressure", icon: Heart, color: "text-destructive", unit: "mmHg" },
+              { type: "sugar", label: "Blood Sugar", icon: Droplets, color: "text-primary", unit: "mg/dL" },
+              { type: "heart", label: "Heart Rate", icon: Activity, color: "text-success", unit: "bpm" },
+              { type: "weight", label: "Body Weight", icon: Scale, color: "text-warning", unit: "kg" }
             ].map((stat) => {
               const reading = latestReadings.find(r => r?.type === stat.type);
+              const range = NORMAL_RANGES[stat.type as keyof typeof NORMAL_RANGES];
               return (
-                <Card key={stat.type} className="card-shadow">
+                <Card key={stat.type} className="card-shadow rounded-[2rem] border-border/50 hover:border-primary/20 transition-colors">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`p-2 rounded-lg bg-muted ${stat.color}`}><stat.icon className="h-5 w-5" /></div>
-                      {reading?.source === 'watch' && <Badge variant="outline" className="text-[8px] gap-1"><Watch className="h-2 w-2" /> WATCH</Badge>}
+                      <div className={`p-2.5 rounded-xl bg-muted ${stat.color} shadow-sm`}><stat.icon className="h-5 w-5" /></div>
+                      <div className="text-right">
+                        <Badge variant="outline" className={`text-[9px] font-bold uppercase tracking-tighter rounded-full ${reading?.status === 'normal' ? 'bg-success/5 text-success border-success/20' : reading?.status === 'high' ? 'bg-destructive/5 text-destructive border-destructive/20' : 'bg-muted text-muted-foreground'}`}>
+                          {reading?.status || "No Data"}
+                        </Badge>
+                      </div>
                     </div>
-                    <h3 className="text-sm font-medium text-muted-foreground">{stat.label}</h3>
-                    <div className="mt-1 flex items-baseline gap-1">
-                      <span className="text-2xl font-bold">{reading ? `${reading.value}${reading.value2 ? '/' + reading.value2 : ''}` : "--"}</span>
-                      <span className="text-xs text-muted-foreground">{stat.unit}</span>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{stat.label}</h3>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-3xl font-extrabold tracking-tight">{reading ? `${reading.value}${reading.value2 ? '/' + reading.value2 : ''}` : "--"}</span>
+                      <span className="text-xs font-bold text-muted-foreground">{stat.unit}</span>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-dashed flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Normal Range</span>
+                      <span className="text-[10px] font-extrabold text-primary">{range.label}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -371,17 +395,20 @@ const HealthDashboard = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2 card-shadow">
+          <Card className="lg:col-span-2 card-shadow rounded-[2rem] border-border/50">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Historical Trends</CardTitle>
+              <div>
+                <CardTitle className="text-lg">Historical Trends</CardTitle>
+                <CardDescription>Visualizing your health progress over time</CardDescription>
+              </div>
               <Tabs value={selectedType} onValueChange={(v) => setSelectedType(v as any)}>
-                <TabsList className="h-8">
-                  {["bp", "sugar", "heart"].map(t => <TabsTrigger key={t} value={t} className="text-xs uppercase">{t}</TabsTrigger>)}
+                <TabsList className="h-9 rounded-xl bg-muted/50 p-1">
+                  {["bp", "sugar", "heart"].map(t => <TabsTrigger key={t} value={t} className="text-[10px] uppercase font-bold rounded-lg px-3">{t}</TabsTrigger>)}
                 </TabsList>
               </Tabs>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px] w-full">
+              <div className="h-[320px] w-full pt-4">
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
@@ -391,103 +418,134 @@ const HealthDashboard = () => {
                           <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#colorVal)" strokeWidth={2} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                        itemStyle={{ fontWeight: 700, fontSize: '12px' }}
+                      />
+                      <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="url(#colorVal)" strokeWidth={3} />
                     </AreaChart>
                   </ResponsiveContainer>
-                ) : <div className="flex h-full items-center justify-center text-muted-foreground text-sm">No historical data</div>}
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-2xl bg-muted/20">
+                    <TrendingUp className="h-10 w-10 opacity-20 mb-2" />
+                    <p className="font-bold">No historical data available</p>
+                    <p className="text-xs">Log your first vital to see trends.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="card-shadow">
-            <CardHeader><CardTitle className="text-lg">Recent History</CardTitle></CardHeader>
+          <Card className="card-shadow rounded-[2rem] border-border/50">
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Logs</CardTitle>
+              <CardDescription>Your last 30 readings</CardDescription>
+            </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[300px] pr-4">
-                <div className="space-y-4">
+              <ScrollArea className="h-[320px] pr-4">
+                <div className="space-y-3">
                   {readings.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
+                    <div key={r.id} className="flex items-center justify-between p-3.5 rounded-2xl bg-muted/30 border border-border/50 group hover:bg-white hover:shadow-md transition-all">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg bg-white shadow-sm ${r.type === 'bp' ? 'text-destructive' : r.type === 'sugar' ? 'text-primary' : 'text-success'}`}>
+                        <div className={`p-2 rounded-xl bg-white shadow-sm ${r.type === 'bp' ? 'text-destructive' : r.type === 'sugar' ? 'text-primary' : 'text-success'}`}>
                           {r.type === 'bp' ? <Heart className="h-4 w-4" /> : r.type === 'sugar' ? <Droplets className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
                         </div>
                         <div>
-                          <p className="text-sm font-bold capitalize">{r.type} Reading</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000).toLocaleString() : '...'}
+                          <p className="text-xs font-bold capitalize">{r.type}</p>
+                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter">
+                            {r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="text-sm font-bold">{r.value}{r.value2 ? '/' + r.value2 : ''} {r.unit}</p>
-                          <Badge variant="outline" className="text-[8px] h-4 px-1.5">{r.source || 'manual'}</Badge>
+                          <p className="text-sm font-extrabold">{r.value}{r.value2 ? '/' + r.value2 : ''} <span className="text-[10px] text-muted-foreground font-bold">{r.unit}</span></p>
+                          <Badge variant="outline" className={`text-[8px] h-4 px-1.5 rounded-full ${r.status === 'normal' ? 'text-success border-success/20' : 'text-destructive border-destructive/20'}`}>{r.status}</Badge>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteReading(r.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteReading(r.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
-                  {readings.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No readings found.</p>}
+                  {readings.length === 0 && (
+                    <div className="text-center py-12">
+                      <Activity className="h-10 w-10 text-muted-foreground/20 mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground font-bold">No readings found.</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>
           </Card>
         </div>
 
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          <Card className="card-shadow">
-            <CardHeader><CardTitle className="text-lg">Troubleshooting</CardTitle></CardHeader>
-            <CardContent className="space-y-4 text-[10px] text-muted-foreground leading-relaxed">
-              <div className="p-4 rounded-xl bg-warning/5 border border-warning/20">
-                <p className="font-bold text-warning uppercase mb-2">boAt Ultraprime Fix</p>
-                <ul className="space-y-2 list-disc pl-3">
-                  <li><strong>boAt Crest App:</strong> Go to Settings {' > '} Health Monitoring {' > '} Enable "Continuous Heart Rate".</li>
-                  <li><strong>Bluetooth:</strong> Unpair the watch from your phone's system Bluetooth settings (Forget Device) so the browser can take control.</li>
-                  <li><strong>Visibility:</strong> Ensure the watch is not currently connected to another fitness app like Strava.</li>
-                </ul>
-              </div>
-              <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                <p className="font-bold text-primary uppercase mb-2">General Tips</p>
-                <ul className="space-y-2 list-disc pl-3">
-                  <li>Ensure watch is in Pairing Mode.</li>
-                  <li>Check browser Bluetooth permissions.</li>
-                  <li>Web Bluetooth requires Chrome or Edge.</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>{connectedDevice && selectedType === "heart" ? "Verified Watch Sync" : "New Health Reading"}</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-4">
-              {!(connectedDevice && selectedType === "heart") && (
-                <div className="grid grid-cols-2 gap-2">
-                  {["bp", "sugar", "heart", "weight"].map(t => (
-                    <Button key={t} variant={selectedType === t ? "default" : "outline"} onClick={() => setSelectedType(t as any)} className="capitalize">{t}</Button>
-                  ))}
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>{selectedType === "bp" ? "Systolic" : selectedType === "heart" ? "Current Heart Rate" : "Value"}</Label>
-                <Input type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+          <DialogContent className="rounded-[2.5rem] p-8">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                <Plus className="h-6 w-6 text-primary" />
+                Log New Vital
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "bp", label: "BP", icon: Heart },
+                  { id: "sugar", label: "Sugar", icon: Droplets },
+                  { id: "heart", label: "Heart", icon: Activity },
+                  { id: "weight", label: "Weight", icon: Scale }
+                ].map(t => (
+                  <Button 
+                    key={t.id} 
+                    variant={selectedType === t.id ? "default" : "outline"} 
+                    onClick={() => setSelectedType(t.id as any)} 
+                    className={`capitalize rounded-xl h-12 gap-2 font-bold ${selectedType === t.id ? 'hero-gradient border-none' : ''}`}
+                  >
+                    <t.icon className="h-4 w-4" />
+                    {t.label}
+                  </Button>
+                ))}
               </div>
-              {selectedType === "bp" && (
+              
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Diastolic</Label>
-                  <Input type="number" value={inputValue2} onChange={(e) => setInputValue2(e.target.value)} />
+                  <Label className="font-bold text-sm ml-1">{selectedType === "bp" ? "Systolic (Upper)" : "Value"}</Label>
+                  <Input 
+                    type="number" 
+                    placeholder={selectedType === "bp" ? "120" : selectedType === "heart" ? "72" : "Value"}
+                    className="h-12 rounded-xl border-border/50 text-lg font-bold"
+                    value={inputValue} 
+                    onChange={(e) => setInputValue(e.target.value)} 
+                  />
                 </div>
-              )}
+                {selectedType === "bp" && (
+                  <div className="space-y-2">
+                    <Label className="font-bold text-sm ml-1">Diastolic (Lower)</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="80"
+                      className="h-12 rounded-xl border-border/50 text-lg font-bold"
+                      value={inputValue2} 
+                      onChange={(e) => setInputValue2(e.target.value)} 
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex gap-3">
+                <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  Your data is encrypted and stored securely. Normal range for <strong>{selectedType.toUpperCase()}</strong> is <strong>{NORMAL_RANGES[selectedType as keyof typeof NORMAL_RANGES].label}</strong>.
+                </p>
+              </div>
             </div>
             <DialogFooter>
-              <Button className="hero-gradient w-full" onClick={handleAddReading} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Sync Reading"}
+              <Button className="hero-gradient w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20" onClick={handleAddReading} disabled={saving}>
+                {saving ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : "Save Reading"}
               </Button>
             </DialogFooter>
           </DialogContent>

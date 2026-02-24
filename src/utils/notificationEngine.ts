@@ -10,7 +10,8 @@ export type NotificationType =
   | "TELECONSULT_START"
   | "PRESCRIPTION_READY"
   | "HEALTH_ALERT_HIGH"
-  | "HEALTH_ALERT_LOW";
+  | "HEALTH_ALERT_LOW"
+  | "OTP_CODE";
 
 interface MessageData {
   name?: string;
@@ -21,10 +22,17 @@ interface MessageData {
   amount?: string;
   metric?: string;
   value?: string;
+  code?: string;
 }
 
 export const generateNotificationMessage = (type: NotificationType, data: MessageData) => {
   switch (type) {
+    case "OTP_CODE":
+      return {
+        title: "Security Code 🔐",
+        body: `Your MedCare verification code is ${data.code}. Do not share this with anyone.`,
+        sms: `MedCare: Your OTP is ${data.code}. Valid for 5 minutes.`,
+      };
     case "ORDER_CONFIRMED":
       return {
         title: "Order Confirmed! 💊",

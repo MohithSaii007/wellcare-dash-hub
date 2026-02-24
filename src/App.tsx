@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import DiseaseSearch from "./pages/DiseaseSearch";
 import Appointments from "./pages/Appointments";
 import Medicines from "./pages/Medicines";
+import Blood from "./pages/Blood";
 import DoctorVisit from "./pages/DoctorVisit";
 import AIAssistant from "./pages/AIAssistant";
 import Teleconsultation from "./pages/Teleconsultation";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/search" element={<ProtectedRoute><DiseaseSearch /></ProtectedRoute>} />
             <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
             <Route path="/medicines" element={<ProtectedRoute><Medicines /></ProtectedRoute>} />
+            <Route path="/blood" element={<ProtectedRoute><Blood /></ProtectedRoute>} />
             <Route path="/doctor-visit" element={<ProtectedRoute><DoctorVisit /></ProtectedRoute>} />
             <Route path="/ai-assistant" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
             <Route path="/teleconsultation" element={<ProtectedRoute><Teleconsultation /></ProtectedRoute>} />

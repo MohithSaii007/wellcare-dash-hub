@@ -132,10 +132,74 @@ export const medicines: Medicine[] = [
       { pharmacyId: "p1", price: 90, stock: 70, discount: 5 },
       { pharmacyId: "p2", price: 85, stock: 100, discount: 15 }
     ]
+  },
+  { 
+    id: "m11", name: "Aspirin 75mg", category: "Chronic Diseases", 
+    description: "Low-dose aspirin to prevent heart attacks and strokes", 
+    usage: "1 tablet daily", 
+    price: 25, requiresPrescription: true,
+    prices: [
+      { pharmacyId: "p1", price: 22, stock: 300, discount: 5 }
+    ]
+  },
+  { 
+    id: "m12", name: "Dolo 650", category: "Fever", 
+    description: "Higher dose paracetamol for severe fever and pain", 
+    usage: "1 tablet every 6 hours", 
+    price: 35, requiresPrescription: false,
+    prices: [
+      { pharmacyId: "p3", price: 30, stock: 500, discount: 10 }
+    ]
   }
 ];
 
 export const medicineCategories = ["All", "Fever", "Cold & Cough", "Skin Diseases", "Chronic Diseases", "Infectious"];
+
+export interface Hospital {
+  id: string;
+  name: string;
+  location: string;
+  specialties: string[];
+  rating: number;
+  image: string;
+  contact: string;
+  bloodStock: Record<string, number>;
+}
+
+export const hospitals: Hospital[] = [
+  { 
+    id: "1", 
+    name: "City Medical Center", 
+    location: "123 Main Street, Downtown", 
+    specialties: ["General Medicine", "Cardiology", "Neurology", "Orthopedics"], 
+    rating: 4.7, 
+    image: "🏥",
+    contact: "+1 234-567-8901",
+    bloodStock: { "A+": 12, "A-": 5, "B+": 8, "B-": 2, "O+": 15, "O-": 4, "AB+": 3, "AB-": 1 }
+  },
+  { 
+    id: "2", 
+    name: "Heart Care Hospital", 
+    location: "456 Cardiac Lane, Uptown", 
+    specialties: ["Cardiology", "Vascular Surgery"], 
+    rating: 4.9, 
+    image: "❤️",
+    contact: "+1 234-567-8902",
+    bloodStock: { "A+": 5, "A-": 2, "B+": 10, "B-": 4, "O+": 20, "O-": 8, "AB+": 5, "AB-": 2 }
+  },
+  { 
+    id: "3", 
+    name: "St. Jude Children's", 
+    location: "789 Pediatric Way, Westside", 
+    specialties: ["Pediatrics", "Oncology"], 
+    rating: 4.8, 
+    image: "🧸",
+    contact: "+1 234-567-8903",
+    bloodStock: { "A+": 8, "A-": 3, "B+": 6, "B-": 1, "O+": 12, "O-": 5, "AB+": 2, "AB-": 0 }
+  }
+];
+
+export const bloodGroups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 
 export interface Disease {
   id: string;
@@ -264,20 +328,6 @@ export const doctors: Doctor[] = [
   { id: "1", name: "Dr. Sarah Johnson", specialty: "General Physician", hospital: "City Medical Center", rating: 4.8, experience: 12, avatar: "SJ", photoUrl: "https://images.unsplash.com/photo-1559839734-2b71f1536780?auto=format&fit=crop&q=80&w=200&h=200", homeVisit: true, fee: 500 },
   { id: "2", name: "Dr. Rajesh Kumar", specialty: "Cardiologist", hospital: "Heart Care Hospital", rating: 4.9, experience: 18, avatar: "RK", photoUrl: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200", homeVisit: false, fee: 1200 },
   { id: "3", name: "Dr. Anita Desai", specialty: "Pediatrician", hospital: "City Medical Center", rating: 4.7, experience: 10, avatar: "AD", photoUrl: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200&h=200", homeVisit: true, fee: 600 },
-];
-
-export interface Hospital {
-  id: string;
-  name: string;
-  location: string;
-  specialties: string[];
-  rating: number;
-  image: string;
-}
-
-export const hospitals: Hospital[] = [
-  { id: "1", name: "City Medical Center", location: "123 Main Street, Downtown", specialties: ["General Medicine", "Cardiology", "Neurology", "Orthopedics"], rating: 4.7, image: "🏥" },
-  { id: "2", name: "Heart Care Hospital", location: "456 Cardiac Lane, Uptown", specialties: ["Cardiology", "Vascular Surgery"], rating: 4.9, image: "❤️" },
 ];
 
 export interface TimeSlot {

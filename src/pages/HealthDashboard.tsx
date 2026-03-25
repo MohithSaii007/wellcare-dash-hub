@@ -105,8 +105,9 @@ const HealthDashboard = () => {
     if (!range) return "normal";
     
     if (type === "bp" && val2) {
-      if (val1 > range.max || val2 > range.max2) return "high";
-      if (val1 < range.min || val2 < range.min2) return "low";
+      const bpRange = range as typeof NORMAL_RANGES.bp;
+      if (val1 > bpRange.max || val2 > bpRange.max2) return "high";
+      if (val1 < bpRange.min || val2 < bpRange.min2) return "low";
       return "normal";
     }
     

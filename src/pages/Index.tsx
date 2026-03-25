@@ -150,7 +150,7 @@ const Index = () => {
 
       {/* Services Grid */}
       <section className={`container ${user ? 'py-12' : '-mt-20 relative z-10 pb-24'}`}>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <ServiceCard
             title="AI Symptom Checker"
             description="Clinical-grade analysis to match you with the right specialist instantly."
@@ -168,15 +168,6 @@ const Index = () => {
             color="primary"
             delay={100}
             onClick={(e) => handleProtectedClick(e, "/refills")}
-          />
-          <ServiceCard
-            title="Price Comparison"
-            description="Compare medicine prices across 50+ pharmacies and save up to 40%."
-            icon={Search}
-            to="/medicines"
-            color="success"
-            delay={200}
-            onClick={(e) => handleProtectedClick(e, "/medicines")}
           />
           <ServiceCard
             title="Teleconsultation"
@@ -199,17 +190,6 @@ const Index = () => {
             </Badge>
             <h2 className="text-4xl font-heading font-extrabold mb-8 leading-tight">Next-Gen Healthcare Tools <br />At Your Fingertips</h2>
             <div className="space-y-10">
-              <div className="flex gap-6">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-success/10 text-success shadow-sm">
-                  <Zap className="h-7 w-7" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-xl mb-2">Medicine Price Comparison</h4>
-                  <p className="text-base text-muted-foreground leading-relaxed">
-                    Don't overpay for your health. Our engine scans partnered pharmacies in real-time to find the lowest prices, fastest delivery, and best discounts for every medicine.
-                  </p>
-                </div>
-              </div>
               <div className="flex gap-6">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
                   <RefreshCw className="h-7 w-7" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles, FileText, ShieldCheck, Search, ArrowRight, RefreshCw, Loader2 } from "lucide-react";
+import { ShoppingCart, Pill, AlertTriangle, CheckCircle2, X, Sparkles, FileText, ShieldCheck, Search, ArrowRight, RefreshCw, Loader2, Plus } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { medicines, medicineCategories, type Medicine, type Pharmacy } from "@/data/mockData";
 import { generateNotificationMessage } from "@/utils/notificationEngine";
 import PrescriptionUpload from "@/components/PrescriptionUpload";
-import MedicinePriceComparison from "@/components/MedicinePriceComparison";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/lib/firebase";
@@ -29,21 +28,13 @@ const Medicines = () => {
   const [smartInput, setSmartInput] = useState("");
   const [isOrdering, setIsOrdering] = useState(false);
   
-  const [comparingMedicine, setComparingMedicine] = useState<Medicine | null>(null);
-  const [showComparisonDialog, setShowComparisonDialog] = useState(false);
-
   const [pendingMedicine, setPendingMedicine] = useState<Medicine | null>(null);
   const [showPrescriptionDialog, setShowPrescriptionDialog] = useState(false);
 
   const filtered = category === "All" ? medicines : medicines.filter((m) => m.category === category);
 
   const handleMedicineClick = (m: Medicine) => {
-    if (m.prices && m.prices.length > 0) {
-      setComparingMedicine(m);
-      setShowComparisonDialog(true);
-    } else {
-      addToCart(m);
-    }
+    addToCart(m);
   };
 
   const addToCart = (m: Medicine, quantity: number = 1, pharmacy?: Pharmacy, prescriptionUrl?: string) => {
@@ -59,14 +50,10 @@ const Medicines = () => {
       return [...prev, { medicine: m, qty: quantity, pharmacy, prescriptionUrl, dosage: 1 }];
     });
     
-    setShowComparisonDialog(false);
     setShowPrescriptionDialog(false);
     setPendingMedicine(null);
-    setComparingMedicine(null);
     
-    toast.success(`Added ${m.name} to cart`, {
-      description: pharmacy ? `Sourced from ${pharmacy.name}` : undefined
-    });
+    toast.success(`Added ${m.name} to cart`);
   };
 
   const removeFromCart = (id: string) => setCart((prev) => prev.filter((c) => c.medicine.id !== id));
@@ -150,7 +137,7 @@ const Medicines = () => {
         <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-fade-in">
           <div>
             <h1 className="text-4xl font-heading font-bold tracking-tight">Order Medicines</h1>
-            <p className="mt-2 text-muted-foreground text-lg">Compare prices across pharmacies and enable AI refill tracking.</p>
+            <p className="mt-2 text-muted-foreground text-lg">Browse our pharmacy and enable AI refill tracking.</p>
           </div>
           <Button variant="outline" className="gap-2 border-primary/20 text-primary bg-primary/5 rounded-2xl h-12 px-6 font-bold" onClick={() => navigate("/refills")}>
             <RefreshCw className="h-4 w-4" /> Manage AI Refills
@@ -205,7 +192,6 @@ const Medicines = () => {
                 <div className="mt-6 flex items-center justify-between pt-4 border-t border-border/50">
                   <div className="space-y-0.5">
                     <span className="text-2xl font-extrabold text-foreground">₹{m.price}</span>
-                    <p className="text-[10px] text-success font-bold uppercase tracking-tighter">Compare & Save</p>
                   </div>
                   <Button 
                     size="sm" 
@@ -213,8 +199,8 @@ const Medicines = () => {
                     variant={m.requiresPrescription ? "outline" : "default"}
                     className={`rounded-xl h-10 px-4 font-bold ${m.requiresPrescription ? "border-destructive/50 text-destructive hover:bg-destructive/5" : "hero-gradient"}`}
                   >
-                    {m.requiresPrescription ? <FileText className="mr-1.5 h-4 w-4" /> : <Search className="mr-1.5 h-4 w-4" />}
-                    {m.requiresPrescription ? "Upload Rx" : "Compare"}
+                    {m.requiresPrescription ? <FileText className="mr-1.5 h-4 w-4" /> : <Plus className="mr-1.5 h-4 w-4" />}
+                    {m.requiresPrescription ? "Upload Rx" : "Add to Cart"}
                   </Button>
                 </div>
               </div>
@@ -234,26 +220,6 @@ const Medicines = () => {
             </Button>
           </div>
         )}
-
-        {/* Price Comparison Dialog */}
-        <Dialog open={showComparisonDialog} onOpenChange={setShowComparisonDialog}>
-          <DialogContent className="sm:max-w-lg rounded-[2.5rem] p-8">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3 text-2xl font-bold">
-                <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                  <Search className="h-6 w-6" />
-                </div>
-                Price Comparison: {comparingMedicine?.name}
-              </DialogTitle>
-            </DialogHeader>
-            {comparingMedicine && (
-              <MedicinePriceComparison 
-                medicine={comparingMedicine}
-                onSelect={(pharmacy, price, discount) => addToCart(comparingMedicine, 1, pharmacy)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
 
         {/* Prescription Upload Dialog */}
         <Dialog open={showPrescriptionDialog} onOpenChange={setShowPrescriptionDialog}>
@@ -291,11 +257,6 @@ const Medicines = () => {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-bold text-base">{c.medicine.name}</p>
-                            {c.pharmacy && (
-                              <Badge variant="outline" className="h-5 px-2 text-[9px] bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-tighter">
-                                {c.pharmacy.name}
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-sm text-muted-foreground font-medium">{c.qty} × ₹{c.medicine.price}</p>
                         </div>

@@ -16,6 +16,7 @@ import Teleconsultation from "./pages/Teleconsultation";
 import VideoCall from "./pages/VideoCall";
 import HealthDashboard from "./pages/HealthDashboard";
 import RefillManagement from "./pages/RefillManagement";
+import LabReportAnalyzer from "./pages/LabReportAnalyzer";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/video-call/:appointmentId" element={<ProtectedRoute><VideoCall /></ProtectedRoute>} />
             <Route path="/health-dashboard" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
             <Route path="/refills" element={<ProtectedRoute><RefillManagement /></ProtectedRoute>} />
+            <Route path="/lab-analyzer" element={<ProtectedRoute><LabReportAnalyzer /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />

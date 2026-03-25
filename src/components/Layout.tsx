@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video, Activity, AlertCircle, Droplets } from "lucide-react";
+import { Heart, Menu, X, Search, Calendar, Pill, Home, User, Stethoscope, ShoppingCart, LogOut, Bot, Video, Activity, AlertCircle, Droplets, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import NotificationCenter from "./NotificationCenter";
@@ -31,6 +31,7 @@ const navItems = [
   { path: "/", label: "Home", icon: Home },
   { path: "/health-dashboard", label: "Vitals", icon: Activity },
   { path: "/ai-assistant", label: "AI Doc", icon: Bot },
+  { path: "/lab-analyzer", label: "Lab AI", icon: FileText },
   { path: "/teleconsultation", label: "Video", icon: Video },
   { path: "/medicines", label: "Pharmacy", icon: Pill },
   { path: "/blood", label: "Blood", icon: Droplets },
